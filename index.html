@@ -65,8 +65,40 @@
   .sub{
     font-size:.85rem;
     color:var(--paper-dim);
-    margin:0 0 28px;
+    margin:0 0 24px;
     line-height:1.5;
+  }
+
+  .mode-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:24px;
+    border-bottom:1px solid #2b4038;
+    padding-bottom:0;
+  }
+  .mode-tab{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--paper-dim);
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.72rem;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    padding:10px 4px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .mode-tab.active{
+    color:var(--brass-bright);
+    border-bottom-color:var(--brass);
+  }
+  .mode-tab:hover{ color:var(--paper); }
+  @media (prefers-reduced-motion: reduce){
+    .mode-tab{ transition:none; }
   }
 
   .control{
@@ -170,6 +202,10 @@
     letter-spacing:0;
     color:#8a8072;
   }
+  .word.hidden{
+    filter:blur(8px);
+    user-select:none;
+  }
 
   .readout{
     margin-bottom:22px;
@@ -244,7 +280,12 @@
 <body>
   <main class="card">
     <h1>Generador de letras</h1>
-    <p class="sub">Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.</p>
+    <p class="sub" id="subText">Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.</p>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="modeNormal" type="button">Letra → Morse</button>
+      <button class="mode-tab" id="modeInverso" type="button">Morse → Letra</button>
+    </div>
 
     <div class="control">
       <label for="len">Letras</label>
@@ -306,6 +347,12 @@
   const valRaya = document.getElementById('valRaya');
   const valPunto = document.getElementById('valPunto');
   const valEspacio = document.getElementById('valEspacio');
+  const subText = document.getElementById('subText');
+  const modeNormal = document.getElementById('modeNormal');
+  const modeInverso = document.getElementById('modeInverso');
+
+  let mode = 'normal'; // 'normal' = letra→morse, 'inverso' = morse→letra
+  let hasGenerated = false;
 
   len.addEventListener('input', () => {
     countLabel.textContent = len.value;
@@ -333,30 +380,66 @@
     ).join(espacio);
   }
 
+  const SUB_TEXT = {
+    normal: 'Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.',
+    inverso: 'Vas a ver el morse y los dígitos primero. Adiviná la letra antes de revelarla.'
+  };
+  const HINT_SHOW = {
+    normal: 'tocá para revelar',
+    inverso: 'tocá para revelar la letra'
+  };
+  const HINT_HIDE = 'tocá para ocultar';
+
+  function setMode(newMode){
+    mode = newMode;
+    modeNormal.classList.toggle('active', mode === 'normal');
+    modeInverso.classList.toggle('active', mode === 'inverso');
+    subText.textContent = SUB_TEXT[mode];
+    revealHint.style.display = 'none';
+    if(!hasGenerated){
+      word.textContent = mode === 'normal' ? 'tocá generar' : '? ? ?';
+    }
+  }
+
+  modeNormal.addEventListener('click', () => setMode('normal'));
+  modeInverso.addEventListener('click', () => setMode('inverso'));
+
   genBtn.addEventListener('click', () => {
     const w = randomWord(parseInt(len.value,10));
-    word.textContent = w;
-    word.classList.remove('placeholder');
+    hasGenerated = true;
 
     morseOut.textContent = toMorse(w);
     morseOut.classList.remove('empty');
-    morseOut.classList.add('hidden');
 
     digitsOut.textContent = toDigits(w);
     digitsOut.classList.remove('empty');
-    digitsOut.classList.add('hidden');
 
-    revealHint.textContent = 'tocá para revelar';
+    word.classList.remove('placeholder');
+
+    if(mode === 'normal'){
+      // la incógnita es el morse/dígitos, la letra está a la vista
+      word.textContent = w;
+      word.classList.remove('hidden');
+      morseOut.classList.add('hidden');
+      digitsOut.classList.add('hidden');
+    } else {
+      // la incógnita es la letra, el morse/dígitos están a la vista
+      word.textContent = w;
+      word.classList.add('hidden');
+      morseOut.classList.remove('hidden');
+      digitsOut.classList.remove('hidden');
+    }
+
+    revealHint.textContent = HINT_SHOW[mode];
     revealHint.style.display = 'block';
   });
 
   revealHint.addEventListener('click', () => {
-    const isHidden = morseOut.classList.contains('hidden');
-    morseOut.classList.toggle('hidden', !isHidden);
-    digitsOut.classList.toggle('hidden', !isHidden);
-    revealHint.textContent = isHidden ? 'tocá para ocultar' : 'tocá para revelar';
+    const targets = mode === 'normal' ? [morseOut, digitsOut] : [word];
+    const isHidden = targets[0].classList.contains('hidden');
+    targets.forEach(el => el.classList.toggle('hidden', !isHidden));
+    revealHint.textContent = isHidden ? HINT_HIDE : HINT_SHOW[mode];
   });
-
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch((err) => {
