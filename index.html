@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generador de palabras — Morse</title>
+<meta name="description" content="Genera combinaciones aleatorias de letras y practica su traducción a código morse y a patrón numérico.">
+<meta name="theme-color" content="#132420">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Morse">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#132420;
+    --ink-2:#1c332d;
+    --paper:#f1e7d3;
+    --paper-dim:#d9c9a8;
+    --brass:#c9903f;
+    --brass-bright:#e0ab5c;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Newsreader',serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100%;
+    padding:24px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --ink:#132420; --ink-2:#1c332d; --paper:#f1e7d3; --paper-dim:#d9c9a8;
+    }
+  }
+
+  .card{
+    width:100%;
+    max-width:460px;
+    background:var(--ink-2);
+    border:1px solid #2b4038;
+    border-radius:6px;
+    padding:36px 32px 32px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.6);
+  }
+
+  h1{
+    font-size:1.5rem;
+    font-weight:600;
+    font-style:italic;
+    margin:0 0 4px;
+    letter-spacing:.2px;
+  }
+  .sub{
+    font-size:.85rem;
+    color:var(--paper-dim);
+    margin:0 0 28px;
+    line-height:1.5;
+  }
+
+  .control{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:26px;
+  }
+  .control label{
+    font-size:.85rem;
+    color:var(--paper-dim);
+    white-space:nowrap;
+  }
+  input[type=range]{
+    flex:1;
+    accent-color:var(--brass);
+    height:2px;
+  }
+  .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:1.1rem;
+    color:var(--brass-bright);
+    min-width:1.4em;
+    text-align:right;
+  }
+
+  .code-params{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    margin-bottom:26px;
+  }
+  .code-param{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    background:rgba(0,0,0,.15);
+    border:1px solid #2b4038;
+    border-radius:4px;
+    padding:10px 6px;
+  }
+  .code-param label{
+    font-size:.68rem;
+    color:var(--paper-dim);
+    text-transform:lowercase;
+  }
+  .code-param input[type=number]{
+    width:100%;
+    background:var(--ink);
+    color:var(--brass-bright);
+    border:1px solid #2b4038;
+    border-radius:3px;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:1rem;
+    text-align:center;
+    padding:5px 2px;
+  }
+  .code-param input[type=number]:focus-visible{
+    outline:2px solid var(--brass-bright);
+    outline-offset:1px;
+  }
+
+  .tape{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:3px;
+    padding:26px 18px;
+    min-height:88px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:22px;
+    position:relative;
+    overflow-x:auto;
+  }
+  .tape::before, .tape::after{
+    content:'';
+    position:absolute;
+    top:50%; transform:translateY(-50%);
+    width:10px; height:10px;
+    border-radius:50%;
+    background:var(--ink-2);
+  }
+  .tape::before{ left:8px; }
+  .tape::after{ right:8px; }
+  .word{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:clamp(1.4rem, 6vw, 2.1rem);
+    letter-spacing:.12em;
+    white-space:nowrap;
+  }
+  .word.placeholder{
+    font-family:'Newsreader',serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:1rem;
+    letter-spacing:0;
+    color:#8a8072;
+  }
+
+  .readout{
+    margin-bottom:22px;
+    display:grid;
+    gap:10px;
+  }
+  .readout-row{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .readout-row .tag{
+    font-size:.7rem;
+    text-transform:lowercase;
+    color:var(--paper-dim);
+    font-family:'Newsreader',serif;
+    font-style:italic;
+    min-width:60px;
+  }
+  .readout-row .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.95rem;
+    letter-spacing:.08em;
+    color:var(--brass-bright);
+    word-break:break-all;
+  }
+  .readout-row .value.empty{
+    color:#5a6e66;
+    font-family:'Newsreader',serif;
+    font-style:italic;
+    font-weight:500;
+    letter-spacing:0;
+  }
+  .readout-row .value.hidden{
+    filter:blur(7px);
+    user-select:none;
+  }
+  .reveal-hint{
+    font-size:.7rem;
+    font-style:italic;
+    color:var(--paper-dim);
+    margin:-4px 0 22px;
+    cursor:pointer;
+    text-align:center;
+  }
+  .reveal-hint:hover{ color:var(--brass-bright); }
+
+  button{
+    width:100%;
+    background:var(--brass);
+    color:#1b1204;
+    border:none;
+    border-radius:4px;
+    padding:14px;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.95rem;
+    letter-spacing:.04em;
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  button:hover{ background:var(--brass-bright); }
+  button:active{ transform:scale(.98); }
+  button:focus-visible{ outline:2px solid var(--brass-bright); outline-offset:3px; }
+
+  @media (prefers-reduced-motion: reduce){
+    button{ transition:none; }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Generador de letras</h1>
+    <p class="sub">Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.</p>
+
+    <div class="control">
+      <label for="len">Letras</label>
+      <input type="range" id="len" min="1" max="10" value="4">
+      <span class="count" id="countLabel">4</span>
+    </div>
+
+    <div class="code-params">
+      <div class="code-param">
+        <label for="valRaya">raya —</label>
+        <input type="number" id="valRaya" value="4">
+      </div>
+      <div class="code-param">
+        <label for="valPunto">punto ·</label>
+        <input type="number" id="valPunto" value="3">
+      </div>
+      <div class="code-param">
+        <label for="valEspacio">espacio</label>
+        <input type="number" id="valEspacio" value="2">
+      </div>
+    </div>
+
+    <div class="tape">
+      <div class="word placeholder" id="word">tocá generar</div>
+    </div>
+
+    <div class="readout">
+      <div class="readout-row">
+        <span class="tag">morse</span>
+        <span class="value empty" id="morseOut">—</span>
+      </div>
+      <div class="readout-row">
+        <span class="tag">dígitos</span>
+        <span class="value empty" id="digitsOut">—</span>
+      </div>
+    </div>
+
+    <p class="reveal-hint" id="revealHint" style="display:none;">tocá para revelar</p>
+
+    <button id="genBtn">Generar</button>
+  </main>
+
+<script>
+  const MORSE = {
+    A:'.-', B:'-...', C:'-.-.', D:'-..', E:'.', F:'..-.', G:'--.',
+    H:'....', I:'..', J:'.---', K:'-.-', L:'.-..', M:'--', N:'-.',
+    Ñ:'--.--', O:'---', P:'.--.', Q:'--.-', R:'.-.', S:'...', T:'-',
+    U:'..-', V:'...-', W:'.--', X:'-..-', Y:'-.--', Z:'--..'
+  };
+  const ABC = Object.keys(MORSE);
+
+  const len = document.getElementById('len');
+  const countLabel = document.getElementById('countLabel');
+  const word = document.getElementById('word');
+  const morseOut = document.getElementById('morseOut');
+  const digitsOut = document.getElementById('digitsOut');
+  const genBtn = document.getElementById('genBtn');
+  const revealHint = document.getElementById('revealHint');
+  const valRaya = document.getElementById('valRaya');
+  const valPunto = document.getElementById('valPunto');
+  const valEspacio = document.getElementById('valEspacio');
+
+  len.addEventListener('input', () => {
+    countLabel.textContent = len.value;
+  });
+
+  function randomWord(n){
+    let out = '';
+    for(let i=0;i<n;i++){
+      out += ABC[Math.floor(Math.random()*ABC.length)];
+    }
+    return out;
+  }
+
+  function toMorse(w){
+    return w.split('').map(ch => MORSE[ch]).join(' / ');
+  }
+
+  // raya, punto y espacio entre letras son configurables por el usuario
+  function toDigits(w){
+    const raya = valRaya.value;
+    const punto = valPunto.value;
+    const espacio = valEspacio.value;
+    return w.split('').map(ch =>
+      MORSE[ch].split('').map(sym => sym === '-' ? raya : punto).join('')
+    ).join(espacio);
+  }
+
+  genBtn.addEventListener('click', () => {
+    const w = randomWord(parseInt(len.value,10));
+    word.textContent = w;
+    word.classList.remove('placeholder');
+
+    morseOut.textContent = toMorse(w);
+    morseOut.classList.remove('empty');
+    morseOut.classList.add('hidden');
+
+    digitsOut.textContent = toDigits(w);
+    digitsOut.classList.remove('empty');
+    digitsOut.classList.add('hidden');
+
+    revealHint.textContent = 'tocá para revelar';
+    revealHint.style.display = 'block';
+  });
+
+  revealHint.addEventListener('click', () => {
+    morseOut.classList.remove('hidden');
+    digitsOut.classList.remove('hidden');
+    revealHint.style.display = 'none';
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((err) => {
+        console.warn('No se pudo registrar el service worker:', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
