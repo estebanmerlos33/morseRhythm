@@ -351,9 +351,10 @@
   });
 
   revealHint.addEventListener('click', () => {
-    morseOut.classList.remove('hidden');
-    digitsOut.classList.remove('hidden');
-    revealHint.style.display = 'none';
+    const isHidden = morseOut.classList.contains('hidden');
+    morseOut.classList.toggle('hidden', !isHidden);
+    digitsOut.classList.toggle('hidden', !isHidden);
+    revealHint.textContent = isHidden ? 'tocá para ocultar' : 'tocá para revelar';
   });
 
   if ('serviceWorker' in navigator) {
