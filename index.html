@@ -358,15 +358,16 @@
     filter:blur(7px);
     user-select:none;
   }
-  .reveal-hint{
-    font-size:.7rem;
-    font-style:italic;
-    color:var(--paper-dim);
+  .hide-toggle{
+    display:flex;
+    align-items:center;
+    gap:10px;
     margin:-4px 0 22px;
-    cursor:pointer;
-    text-align:center;
   }
-  .reveal-hint:hover{ color:var(--brass-bright); }
+  .hide-toggle span{
+    font-size:.8rem;
+    color:var(--paper-dim);
+  }
 
   button{
     width:100%;
@@ -468,7 +469,13 @@
       </div>
     </div>
 
-    <p class="reveal-hint" id="revealHint" style="display:none;">tocá para revelar</p>
+    <p class="hide-toggle">
+      <label class="switch">
+        <input type="checkbox" id="hideToggle">
+        <span class="switch-track"></span>
+      </label>
+      <span>Mantener oculto</span>
+    </p>
 
     <button id="genBtn">Generar</button>
   </main>
@@ -488,7 +495,7 @@
   const morseOut = document.getElementById('morseOut');
   const digitsOut = document.getElementById('digitsOut');
   const genBtn = document.getElementById('genBtn');
-  const revealHint = document.getElementById('revealHint');
+  const hideToggle = document.getElementById('hideToggle');
   const valRaya = document.getElementById('valRaya');
   const valPunto = document.getElementById('valPunto');
   const valEspacio = document.getElementById('valEspacio');
@@ -539,20 +546,16 @@
     normal: 'Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.',
     inverso: 'Vas a ver el morse y los dígitos primero. Adiviná la letra antes de revelarla.'
   };
-  const HINT_SHOW = {
-    normal: 'tocá para revelar',
-    inverso: 'tocá para revelar la letra'
-  };
-  const HINT_HIDE = 'tocá para ocultar';
 
   function setMode(newMode){
     mode = newMode;
     modeNormal.classList.toggle('active', mode === 'normal');
     modeInverso.classList.toggle('active', mode === 'inverso');
     subText.textContent = SUB_TEXT[mode];
-    revealHint.style.display = 'none';
     if(!hasGenerated){
       word.textContent = mode === 'normal' ? 'tocá generar' : '? ? ?';
+    } else {
+      applyVisibility();
     }
   }
 
@@ -607,6 +610,16 @@
     autoTimer = setTimeout(generate, totalMs);
   }
 
+  // Según el checkbox "Mantener oculto", la incógnita del modo actual
+  // queda siempre visible (por defecto) o siempre oculta.
+  function applyVisibility(){
+    const shouldHide = hideToggle.checked;
+    const targets = mode === 'normal' ? [morseOut, digitsOut] : [word];
+    const others = mode === 'normal' ? [word] : [morseOut, digitsOut];
+    targets.forEach(el => el.classList.toggle('hidden', shouldHide));
+    others.forEach(el => el.classList.remove('hidden'));
+  }
+
   function generate(){
     const w = randomWord(parseInt(len.value,10));
     hasGenerated = true;
@@ -620,25 +633,12 @@
     word.classList.remove('placeholder');
     word.textContent = w;
 
-    if(mode === 'normal'){
-      // la incógnita es el morse/dígitos, la letra está a la vista
-      word.classList.remove('hidden');
-      morseOut.classList.add('hidden');
-      digitsOut.classList.add('hidden');
-    } else {
-      // la incógnita es la letra, el morse/dígitos están a la vista
-      word.classList.add('hidden');
-      morseOut.classList.remove('hidden');
-      digitsOut.classList.remove('hidden');
-    }
-
-    revealHint.textContent = HINT_SHOW[mode];
-    revealHint.style.display = 'block';
-
+    applyVisibility();
     scheduleAutoNext(w);
   }
 
   genBtn.addEventListener('click', generate);
+  hideToggle.addEventListener('change', applyVisibility);
 
   autoToggle.addEventListener('change', () => {
     autoControls.classList.toggle('disabled', !autoToggle.checked);
@@ -655,13 +655,6 @@
   bpmRange.addEventListener('input', () => {
     bpmValue.textContent = bpmRange.value;
     if(autoToggle.checked) startMetronome();
-  });
-
-  revealHint.addEventListener('click', () => {
-    const targets = mode === 'normal' ? [morseOut, digitsOut] : [word];
-    const isHidden = targets[0].classList.contains('hidden');
-    targets.forEach(el => el.classList.toggle('hidden', !isHidden));
-    revealHint.textContent = isHidden ? HINT_HIDE : HINT_SHOW[mode];
   });
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
