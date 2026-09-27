@@ -639,8 +639,18 @@
 
   let nextWord = null;
 
-  let metronomeInterval = null;
-  let autoTimer = null;
+  // --- Reloj único (scheduler) ---
+  // Tanto el pulso del metrónomo como el avance de palabra se calculan como
+  // tiempos absolutos desde un mismo origen (originTime), multiplicando por
+  // una cantidad entera de pulsos/ticks — nunca sumando delay sobre delay.
+  // Así se elimina el desfasaje técnico entre ambos relojes; el desfasaje
+  // "musical" (una palabra que no termina justo en un pulso) es esperado.
+  let schedulerHandle = null;
+  let originTime = 0;
+  let beatMs = 0;
+  let tickMs = 0;
+  let beatCount = 0;
+  let cumulativeTicks = 0;
   let audioCtx = null;
 
   function ensureAudioCtx(){
@@ -760,21 +770,6 @@
     return digitsStr.split('').reduce((acc, ch) => acc + parseInt(ch, 10), 0);
   }
 
-  function beatPulse(){
-    metronomeDot.classList.add('beat');
-    setTimeout(() => metronomeDot.classList.remove('beat'), 100);
-    playClick();
-  }
-  function startMetronome(){
-    stopMetronome();
-    beatPulse();
-    metronomeInterval = setInterval(beatPulse, 60000 / getBpm());
-  }
-  function stopMetronome(){
-    if(metronomeInterval){ clearInterval(metronomeInterval); metronomeInterval = null; }
-    metronomeDot.classList.remove('beat');
-  }
-
   function startProgress(totalMs){
     progressFill.style.transition = 'none';
     progressFill.style.width = '0%';
@@ -787,16 +782,58 @@
     progressFill.style.width = '0%';
   }
 
-  // El tiempo hasta la próxima palabra se adapta a su propia suma de dígitos
-  // (según raya/punto/espacio configurados), no a un intervalo fijo.
-  function scheduleAutoNext(w){
-    clearTimeout(autoTimer);
+  function beatPulse(){
+    metronomeDot.classList.add('beat');
+    setTimeout(() => metronomeDot.classList.remove('beat'), 100);
+    playClick();
+  }
+
+  // Reinicia el origen del reloj: se usa al activar el modo automático o
+  // cuando cambian BPM/subdivisión (ambos redefinen la duración del pulso).
+  function resetEpoch(){
+    originTime = performance.now();
+    beatMs = 60000 / getBpm();
+    tickMs = beatMs * getSubdivisionFactor();
+    beatCount = 0;
+    cumulativeTicks = 0;
+  }
+
+  function startScheduler(){
+    stopScheduler();
+    resetEpoch();
+    schedulerHandle = setInterval(schedulerTick, 20);
+  }
+
+  function stopScheduler(){
+    if(schedulerHandle){ clearInterval(schedulerHandle); schedulerHandle = null; }
+    metronomeDot.classList.remove('beat');
+    stopProgress();
+  }
+
+  function schedulerTick(){
+    const now = performance.now();
+    const nextBeatTime = originTime + beatCount * beatMs;
+    if(now >= nextBeatTime){
+      beatPulse();
+      beatCount++;
+    }
+    const nextWordTime = originTime + cumulativeTicks * tickMs;
+    if(autoToggle.checked && now >= nextWordTime){
+      generate();
+    }
+  }
+
+  // Avanza el contador de ticks en base a la palabra recién generada, y
+  // arranca la barra de progreso con la duración real de esa palabra.
+  // Usa Math.max con el tiempo transcurrido para no quedar "atrasado" si
+  // generate() se disparó manualmente en vez de por el scheduler.
+  function advanceWordSchedule(w){
     if(!autoToggle.checked) return;
     const totalTicks = sumDigits(toDigits(w));
-    const msPerTick = (60000 / getBpm()) * getSubdivisionFactor();
-    const totalMs = Math.max(150, msPerTick * totalTicks);
+    const elapsedTicks = (performance.now() - originTime) / tickMs;
+    cumulativeTicks = Math.max(cumulativeTicks, Math.ceil(elapsedTicks)) + totalTicks;
+    const totalMs = Math.max(150, tickMs * totalTicks);
     startProgress(totalMs);
-    autoTimer = setTimeout(generate, totalMs);
   }
 
   // Según el checkbox "Mantener oculto", la incógnita del modo actual
@@ -831,7 +868,7 @@
 
     applyVisibility();
     refreshNextPreview();
-    scheduleAutoNext(w);
+    advanceWordSchedule(w);
   }
 
   refreshNextPreview();
@@ -842,19 +879,17 @@
     autoControls.classList.toggle('disabled', !autoToggle.checked);
     nextPreviewRow.classList.toggle('visible', autoToggle.checked);
     if(autoToggle.checked){
-      startMetronome();
+      startScheduler();
       generate();
     } else {
-      stopMetronome();
-      clearTimeout(autoTimer);
-      stopProgress();
+      stopScheduler();
     }
   });
 
   bpmRange.addEventListener('input', () => {
     bpmNumber.value = bpmRange.value;
     bpmValue.textContent = bpmRange.value;
-    if(autoToggle.checked) startMetronome();
+    if(autoToggle.checked) resetEpoch();
   });
 
   bpmNumber.addEventListener('input', () => {
@@ -863,7 +898,11 @@
     v = Math.min(240, Math.max(30, v));
     bpmRange.value = v;
     bpmValue.textContent = v;
-    if(autoToggle.checked) startMetronome();
+    if(autoToggle.checked) resetEpoch();
+  });
+
+  subdivisionSelect.addEventListener('change', () => {
+    if(autoToggle.checked) resetEpoch();
   });
 
   soundToggle.addEventListener('change', () => {
