@@ -321,6 +321,27 @@
     user-select:none;
   }
 
+  .next-preview{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin:-10px 0 22px;
+  }
+  .next-preview .tag{
+    font-size:.7rem;
+    font-family:'Newsreader',serif;
+    font-style:italic;
+    color:var(--paper-dim);
+    white-space:nowrap;
+  }
+  .next-preview .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.95rem;
+    letter-spacing:.1em;
+    color:#8a938d;
+  }
+
   .readout{
     margin-bottom:22px;
     display:grid;
@@ -458,6 +479,11 @@
       <div class="word placeholder" id="word">tocá generar</div>
     </div>
 
+    <p class="next-preview">
+      <span class="tag">siguiente palabra</span>
+      <span class="value" id="nextWordText">····</span>
+    </p>
+
     <div class="readout">
       <div class="readout-row">
         <span class="tag">morse</span>
@@ -509,6 +535,9 @@
   const bpmRange = document.getElementById('bpmRange');
   const subdivisionSelect = document.getElementById('subdivisionSelect');
   const progressFill = document.getElementById('progressFill');
+  const nextWordText = document.getElementById('nextWordText');
+
+  let nextWord = null;
 
   let metronomeInterval = null;
   let autoTimer = null;
@@ -518,6 +547,7 @@
 
   len.addEventListener('input', () => {
     countLabel.textContent = len.value;
+    refreshNextPreview();
   });
 
   function randomWord(n){
@@ -620,8 +650,15 @@
     others.forEach(el => el.classList.remove('hidden'));
   }
 
+  // La "siguiente palabra" se precomputa para poder mostrarla de antemano;
+  // al generar, se convierte en la actual y se calcula una nueva para el preview.
+  function refreshNextPreview(){
+    nextWord = randomWord(parseInt(len.value,10));
+    nextWordText.textContent = nextWord;
+  }
+
   function generate(){
-    const w = randomWord(parseInt(len.value,10));
+    const w = nextWord || randomWord(parseInt(len.value,10));
     hasGenerated = true;
 
     morseOut.textContent = toMorse(w);
@@ -634,9 +671,11 @@
     word.textContent = w;
 
     applyVisibility();
+    refreshNextPreview();
     scheduleAutoNext(w);
   }
 
+  refreshNextPreview();
   genBtn.addEventListener('click', generate);
   hideToggle.addEventListener('change', applyVisibility);
 
