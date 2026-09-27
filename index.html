@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Generador de palabras — Morse</title>
-<meta name="description" content="Genera combinaciones aleatorias de letras y practica su traducción a código morse y a patrón numérico.">
-<meta name="theme-color" content="#132420">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Morse">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -322,10 +314,13 @@
   }
 
   .next-preview{
-    display:flex;
+    display:none;
     align-items:baseline;
     gap:10px;
     margin:-10px 0 22px;
+  }
+  .next-preview.visible{
+    display:flex;
   }
   .next-preview .tag{
     font-size:.7rem;
@@ -479,7 +474,7 @@
       <div class="word placeholder" id="word">tocá generar</div>
     </div>
 
-    <p class="next-preview">
+    <p class="next-preview" id="nextPreviewRow">
       <span class="tag">siguiente palabra</span>
       <span class="value" id="nextWordText">····</span>
     </p>
@@ -536,6 +531,7 @@
   const subdivisionSelect = document.getElementById('subdivisionSelect');
   const progressFill = document.getElementById('progressFill');
   const nextWordText = document.getElementById('nextWordText');
+  const nextPreviewRow = document.getElementById('nextPreviewRow');
 
   let nextWord = null;
 
@@ -681,6 +677,7 @@
 
   autoToggle.addEventListener('change', () => {
     autoControls.classList.toggle('disabled', !autoToggle.checked);
+    nextPreviewRow.classList.toggle('visible', autoToggle.checked);
     if(autoToggle.checked){
       startMetronome();
       generate();
@@ -695,13 +692,6 @@
     bpmValue.textContent = bpmRange.value;
     if(autoToggle.checked) startMetronome();
   });
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch((err) => {
-        console.warn('No se pudo registrar el service worker:', err);
-      });
-    });
-  }
 </script>
 </body>
 </html>
