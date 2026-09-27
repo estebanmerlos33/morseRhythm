@@ -705,8 +705,10 @@
     len.min = String(minLen);
     if(parseInt(len.value, 10) < minLen){
       len.value = String(minLen);
-      countLabel.textContent = String(minLen);
     }
+    // El navegador puede clampear len.value apenas cambia min, así que
+    // sincronizamos la etiqueta con el valor real en vez de asumirlo.
+    countLabel.textContent = len.value;
     refreshNextPreview();
   }
 
