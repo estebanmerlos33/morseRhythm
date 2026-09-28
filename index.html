@@ -825,11 +825,12 @@
     return digitsStr.split('').reduce((acc, ch) => acc + parseInt(ch, 10), 0);
   }
 
-  function startProgress(totalMs){
+  // Vacía al instante y llena linealmente hasta el fin real de la palabra.
+  function startProgress(remainingMs, startFraction = 0){
     progressFill.style.transition = 'none';
-    progressFill.style.width = '0%';
+    progressFill.style.width = (startFraction * 100) + '%';
     void progressFill.offsetWidth; // forzar reflow para reiniciar la transición
-    progressFill.style.transition = `width ${totalMs}ms linear`;
+    progressFill.style.transition = `width ${remainingMs}ms linear`;
     progressFill.style.width = '100%';
   }
   function stopProgress(){
@@ -907,15 +908,25 @@
   function advanceWordSchedule(w){
     if(!autoToggle.checked) return;
     const totalTicks = sumDigits(toDigits(w));
-    const elapsedTicks = (performance.now() - originTime) / tickMs;
-    const startTicks = Math.max(cumulativeTicks, Math.ceil(elapsedTicks));
+    const now = performance.now();
+    const elapsedTicks = (now - originTime) / tickMs;
+    // Disparo del scheduler (llegó la hora): la palabra arranca exactamente en
+    // la grilla, sin saltear ticks aunque el poll llegue unos ms tarde.
+    // Disparo manual (antes de tiempo): arranca en el próximo tick de la grilla.
+    const startTicks = elapsedTicks >= cumulativeTicks
+      ? Math.max(cumulativeTicks, Math.floor(elapsedTicks))
+      : Math.ceil(elapsedTicks);
     cumulativeTicks = startTicks + totalTicks;
     currentWordStartTicks = startTicks;
     currentWordTotalTicks = totalTicks;
     lastTickInWord = 1;
     updateRhythmCounter(1, totalTicks);
-    const totalMs = Math.max(150, tickMs * totalTicks);
-    startProgress(totalMs);
+
+    // La barra se alinea al inicio/fin reales de la palabra en la grilla.
+    const wordStartMs = originTime + startTicks * tickMs;
+    const wordEndMs = wordStartMs + tickMs * totalTicks;
+    const startFraction = Math.max(0, (now - wordStartMs) / (wordEndMs - wordStartMs));
+    startProgress(Math.max(0, wordEndMs - now), startFraction);
   }
 
   // Según el checkbox "Mantener oculto", la incógnita del modo actual
