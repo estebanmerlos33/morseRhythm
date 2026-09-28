@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Generador de palabras — Morse</title>
+<meta name="description" content="Genera palabras o letras al azar y practica su traducción a código morse y a patrón numérico rítmico.">
+<meta name="theme-color" content="#132420">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Morse">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -309,6 +317,27 @@
     width:0%;
     background:var(--brass);
   }
+  .rhythm-counter{
+    display:none;
+    align-items:baseline;
+    gap:10px;
+    margin:-8px 0 22px;
+  }
+  .rhythm-counter.visible{ display:flex; }
+  .rhythm-counter .tag{
+    font-size:.7rem;
+    font-family:'Newsreader',serif;
+    font-style:italic;
+    color:var(--paper-dim);
+    white-space:nowrap;
+  }
+  .rhythm-counter .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.95rem;
+    letter-spacing:.05em;
+    color:var(--brass-bright);
+  }
   @media (prefers-reduced-motion: reduce){
     .metronome-dot{ transition:none; }
   }
@@ -542,6 +571,11 @@
       <div class="progress-fill" id="progressFill"></div>
     </div>
 
+    <p class="rhythm-counter" id="rhythmCounterRow">
+      <span class="tag">compás</span>
+      <span class="value" id="rhythmCounterText">—</span>
+    </p>
+
     <div class="tape">
       <div class="word placeholder" id="word">tocá generar</div>
     </div>
@@ -636,6 +670,8 @@
   const progressFill = document.getElementById('progressFill');
   const nextWordText = document.getElementById('nextWordText');
   const nextPreviewRow = document.getElementById('nextPreviewRow');
+  const rhythmCounterRow = document.getElementById('rhythmCounterRow');
+  const rhythmCounterText = document.getElementById('rhythmCounterText');
 
   let nextWord = null;
 
@@ -651,7 +687,26 @@
   let tickMs = 0;
   let beatCount = 0;
   let cumulativeTicks = 0;
+  let currentWordTotalTicks = 0;
+  let currentWordStartTicks = 0;
+  let lastTickInWord = -1;
   let audioCtx = null;
+
+  // Denominador "real" (múltiplo de 2) y paso por tick para cada subdivisión.
+  // Puntillo cuenta en la subdivisión recta inmediatamente menor (x3 pasos);
+  // los tresillos usan el denominador de la subdivisión que dividen, con etiqueta.
+  const SUBDIVISION_INFO = {
+    "1":            { denom: 4,  step: 1, tresillo: false }, // negra
+    "0.5":          { denom: 8,  step: 1, tresillo: false }, // corchea
+    "0.25":         { denom: 16, step: 1, tresillo: false }, // semicorchea
+    "1.5":          { denom: 8,  step: 3, tresillo: false }, // negra con puntillo
+    "0.75":         { denom: 16, step: 3, tresillo: false }, // corchea con puntillo
+    "0.3333333333": { denom: 8,  step: 1, tresillo: true  }, // tresillo de corcheas
+    "0.1666666667": { denom: 16, step: 1, tresillo: true  }  // tresillo de semicorcheas
+  };
+  function getSubdivisionInfo(){
+    return SUBDIVISION_INFO[subdivisionSelect.value] || { denom: 4, step: 1, tresillo: false };
+  }
 
   function ensureAudioCtx(){
     if(!audioCtx){
@@ -808,6 +863,18 @@
     if(schedulerHandle){ clearInterval(schedulerHandle); schedulerHandle = null; }
     metronomeDot.classList.remove('beat');
     stopProgress();
+    currentWordTotalTicks = 0;
+    lastTickInWord = -1;
+    rhythmCounterText.textContent = '—';
+  }
+
+  // Muestra "posición/den : total/den" (+ " - Tresillo" si corresponde)
+  function updateRhythmCounter(tickInWord, totalTicks){
+    const info = getSubdivisionInfo();
+    const cur = tickInWord * info.step;
+    const tot = totalTicks * info.step;
+    const label = info.tresillo ? ' - Tresillo' : '';
+    rhythmCounterText.textContent = `${cur}/${info.denom} : ${tot}/${info.denom}${label}`;
   }
 
   function schedulerTick(){
@@ -821,6 +888,16 @@
     if(autoToggle.checked && now >= nextWordTime){
       generate();
     }
+    // Posición actual dentro de la palabra (1..total), sincronizada al reloj único
+    if(autoToggle.checked && currentWordTotalTicks > 0){
+      const wordStart = originTime + currentWordStartTicks * tickMs;
+      let t = Math.floor((now - wordStart) / tickMs) + 1;
+      t = Math.max(1, Math.min(currentWordTotalTicks, t));
+      if(t !== lastTickInWord){
+        lastTickInWord = t;
+        updateRhythmCounter(t, currentWordTotalTicks);
+      }
+    }
   }
 
   // Avanza el contador de ticks en base a la palabra recién generada, y
@@ -831,7 +908,12 @@
     if(!autoToggle.checked) return;
     const totalTicks = sumDigits(toDigits(w));
     const elapsedTicks = (performance.now() - originTime) / tickMs;
-    cumulativeTicks = Math.max(cumulativeTicks, Math.ceil(elapsedTicks)) + totalTicks;
+    const startTicks = Math.max(cumulativeTicks, Math.ceil(elapsedTicks));
+    cumulativeTicks = startTicks + totalTicks;
+    currentWordStartTicks = startTicks;
+    currentWordTotalTicks = totalTicks;
+    lastTickInWord = 1;
+    updateRhythmCounter(1, totalTicks);
     const totalMs = Math.max(150, tickMs * totalTicks);
     startProgress(totalMs);
   }
@@ -878,6 +960,7 @@
   autoToggle.addEventListener('change', () => {
     autoControls.classList.toggle('disabled', !autoToggle.checked);
     nextPreviewRow.classList.toggle('visible', autoToggle.checked);
+    rhythmCounterRow.classList.toggle('visible', autoToggle.checked);
     if(autoToggle.checked){
       startScheduler();
       generate();
@@ -902,13 +985,24 @@
   });
 
   subdivisionSelect.addEventListener('change', () => {
-    if(autoToggle.checked) resetEpoch();
+    if(autoToggle.checked){
+      resetEpoch();
+      currentWordTotalTicks = 0; // la palabra en curso queda cortada por el reinicio de reloj
+    }
   });
 
   soundToggle.addEventListener('change', () => {
     soundControls.classList.toggle('disabled', !soundToggle.checked);
     if(soundToggle.checked) ensureAudioCtx();
   });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((err) => {
+        console.warn('No se pudo registrar el service worker:', err);
+      });
+    });
+  }
 </script>
 </body>
 </html>
