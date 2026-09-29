@@ -539,8 +539,6 @@
           <option value="1">Negra (♩)</option>
           <option value="0.5" selected>Corchea (♪)</option>
           <option value="0.25">Semicorchea</option>
-          <option value="1.5">Negra con puntillo</option>
-          <option value="0.75">Corchea con puntillo</option>
           <option value="0.3333333333">Tresillo de corcheas</option>
           <option value="0.1666666667">Tresillo de semicorcheas</option>
         </select>
@@ -561,6 +559,26 @@
             <div class="slider-row">
               <label for="volumeRange">Volumen</label>
               <input type="range" id="volumeRange" min="0" max="100" value="60">
+            </div>
+
+            <div class="sound-panel">
+              <div class="auto-row">
+                <label class="switch">
+                  <input type="checkbox" id="subSoundToggle">
+                  <span class="switch-track"></span>
+                </label>
+                <span>Sonido de subdivisión</span>
+              </div>
+              <div class="sound-controls disabled" id="subSoundControls">
+                <div class="slider-row">
+                  <label for="subToneRange">Tono</label>
+                  <input type="range" id="subToneRange" min="200" max="1500" value="1200">
+                </div>
+                <div class="slider-row">
+                  <label for="subVolumeRange">Volumen</label>
+                  <input type="range" id="subVolumeRange" min="0" max="100" value="35">
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -667,6 +685,10 @@
   const soundControls = document.getElementById('soundControls');
   const toneRange = document.getElementById('toneRange');
   const volumeRange = document.getElementById('volumeRange');
+  const subSoundToggle = document.getElementById('subSoundToggle');
+  const subSoundControls = document.getElementById('subSoundControls');
+  const subToneRange = document.getElementById('subToneRange');
+  const subVolumeRange = document.getElementById('subVolumeRange');
   const progressFill = document.getElementById('progressFill');
   const nextWordText = document.getElementById('nextWordText');
   const nextPreviewRow = document.getElementById('nextPreviewRow');
@@ -686,6 +708,7 @@
   let beatMs = 0;
   let tickMs = 0;
   let beatCount = 0;
+  let subTickCount = 0;
   let cumulativeTicks = 0;
   let currentWordTotalTicks = 0;
   let currentWordStartTicks = 0;
@@ -699,8 +722,6 @@
     "1":            { denom: 4,  step: 1, tresillo: false }, // negra
     "0.5":          { denom: 8,  step: 1, tresillo: false }, // corchea
     "0.25":         { denom: 16, step: 1, tresillo: false }, // semicorchea
-    "1.5":          { denom: 8,  step: 3, tresillo: false }, // negra con puntillo
-    "0.75":         { denom: 16, step: 3, tresillo: false }, // corchea con puntillo
     "0.3333333333": { denom: 8,  step: 1, tresillo: true  }, // tresillo de corcheas
     "0.1666666667": { denom: 16, step: 1, tresillo: true  }  // tresillo de semicorcheas
   };
@@ -729,6 +750,24 @@
     osc.connect(gain).connect(audioCtx.destination);
     osc.start(t);
     osc.stop(t + 0.09);
+  }
+
+  // Tick de subdivisión: más corto que el pulso principal para que se
+  // distinga como un "tick" liviano debajo del click del compás.
+  function playSubClick(){
+    if(!soundToggle.checked || !subSoundToggle.checked) return;
+    ensureAudioCtx();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = parseFloat(subToneRange.value);
+    const vol = parseFloat(subVolumeRange.value) / 100;
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.05);
   }
 
   let mode = 'normal'; // 'normal' = letra→morse, 'inverso' = morse→letra
@@ -851,6 +890,7 @@
     beatMs = 60000 / getBpm();
     tickMs = beatMs * getSubdivisionFactor();
     beatCount = 0;
+    subTickCount = 0;
     cumulativeTicks = 0;
   }
 
@@ -884,6 +924,11 @@
     if(now >= nextBeatTime){
       beatPulse();
       beatCount++;
+    }
+    const nextSubTickTime = originTime + subTickCount * tickMs;
+    if(now >= nextSubTickTime){
+      playSubClick();
+      subTickCount++;
     }
     const nextWordTime = originTime + cumulativeTicks * tickMs;
     if(autoToggle.checked && now >= nextWordTime){
@@ -1005,6 +1050,11 @@
   soundToggle.addEventListener('change', () => {
     soundControls.classList.toggle('disabled', !soundToggle.checked);
     if(soundToggle.checked) ensureAudioCtx();
+  });
+
+  subSoundToggle.addEventListener('change', () => {
+    subSoundControls.classList.toggle('disabled', !subSoundToggle.checked);
+    if(subSoundToggle.checked) ensureAudioCtx();
   });
 
   if ('serviceWorker' in navigator) {
