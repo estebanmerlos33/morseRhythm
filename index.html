@@ -491,14 +491,14 @@
     </div>
 
     <div class="mode-tabs">
-      <button class="mode-tab active" id="sourceRandom" type="button">Aleatorio</button>
-      <button class="mode-tab" id="sourceEs" type="button">Español</button>
+      <button class="mode-tab active" id="sourceEs" type="button">Español</button>
       <button class="mode-tab" id="sourceEn" type="button">Inglés</button>
+      <button class="mode-tab" id="sourceRandom" type="button">Aleatorio</button>
     </div>
 
     <div class="control">
       <label for="len">Letras</label>
-      <input type="range" id="len" min="1" max="10" value="4">
+      <input type="range" id="len" min="3" max="10" value="4">
       <span class="count" id="countLabel">4</span>
     </div>
 
@@ -554,7 +554,7 @@
           <div class="sound-controls disabled" id="soundControls">
             <div class="slider-row">
               <label for="toneRange">Tono</label>
-              <input type="range" id="toneRange" min="200" max="1500" value="800">
+              <input type="range" id="toneRange" min="200" max="1500" value="1000">
             </div>
             <div class="slider-row">
               <label for="volumeRange">Volumen</label>
@@ -572,7 +572,7 @@
               <div class="sound-controls disabled" id="subSoundControls">
                 <div class="slider-row">
                   <label for="subToneRange">Tono</label>
-                  <input type="range" id="subToneRange" min="200" max="1500" value="1200">
+                  <input type="range" id="subToneRange" min="200" max="1500" value="600">
                 </div>
                 <div class="slider-row">
                   <label for="subVolumeRange">Volumen</label>
@@ -616,7 +616,7 @@
 
     <p class="hide-toggle">
       <label class="switch">
-        <input type="checkbox" id="hideToggle">
+        <input type="checkbox" id="hideToggle" checked>
         <span class="switch-track"></span>
       </label>
       <span>Mantener oculto</span>
@@ -771,7 +771,7 @@
   }
 
   let mode = 'normal'; // 'normal' = letra→morse, 'inverso' = morse→letra
-  let wordSource = 'random'; // 'random' | 'es' | 'en'
+  let wordSource = 'es'; // 'random' | 'es' | 'en' — por defecto: español
   let hasGenerated = false;
 
   len.addEventListener('input', () => {
