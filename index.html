@@ -164,6 +164,61 @@
     outline-offset:1px;
   }
 
+  .fixed-word-panel{
+    background:rgba(0,0,0,.15);
+    border:1px solid #2b4038;
+    border-radius:4px;
+    padding:14px 16px;
+    margin-bottom:26px;
+  }
+  .fixed-word-controls{
+    display:grid;
+    gap:10px;
+    margin-top:12px;
+  }
+  .fixed-word-controls.disabled{
+    opacity:.4;
+    pointer-events:none;
+  }
+  .fixed-word-controls input[type=text]{
+    width:100%;
+    background:var(--ink);
+    color:var(--brass-bright);
+    border:1px solid #2b4038;
+    border-radius:3px;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:1rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    padding:10px;
+  }
+  .fixed-word-controls input[type=text]::placeholder{
+    color:#5a6e66;
+    letter-spacing:.02em;
+    font-weight:500;
+  }
+  .fixed-word-controls button{
+    width:100%;
+    background:transparent;
+    color:var(--brass-bright);
+    border:1px solid var(--brass);
+    border-radius:4px;
+    padding:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.78rem;
+    letter-spacing:.03em;
+    cursor:pointer;
+  }
+  .fixed-word-controls button:hover{ background:rgba(201,144,63,.15); }
+  .fixed-word-hint{
+    font-size:.7rem;
+    font-style:italic;
+    color:var(--paper-dim);
+    margin:0;
+  }
+
   .auto-panel{
     background:rgba(0,0,0,.15);
     border:1px solid #2b4038;
@@ -502,6 +557,21 @@
       <span class="count" id="countLabel">4</span>
     </div>
 
+    <div class="fixed-word-panel">
+      <div class="auto-row">
+        <label class="switch">
+          <input type="checkbox" id="fixedWordToggle">
+          <span class="switch-track"></span>
+        </label>
+        <span>Practicar palabra fija</span>
+      </div>
+      <div class="fixed-word-controls disabled" id="fixedWordControls">
+        <input type="text" id="fixedWordInput" maxlength="10" placeholder="ESCRIBÍ UNA PALABRA (1-10 LETRAS)">
+        <button type="button" id="pinCurrentBtn">Fijar palabra actual</button>
+        <p class="fixed-word-hint">Con esto activo, se ignoran la fuente y la cantidad de letras.</p>
+      </div>
+    </div>
+
     <div class="code-params">
       <div class="code-param">
         <label for="valRaya">raya —</label>
@@ -553,7 +623,7 @@
           </div>
           <div class="sound-controls disabled" id="soundControls">
             <div class="slider-row">
-              <label for="toneRange">Tono</label>
+              <label for="toneRange">Tono <span id="toneValue">(600Hz)</span></label>
               <input type="range" id="toneRange" min="200" max="1500" value="600">
             </div>
             <div class="slider-row">
@@ -571,7 +641,7 @@
               </div>
               <div class="sound-controls disabled" id="subSoundControls">
                 <div class="slider-row">
-                  <label for="subToneRange">Tono</label>
+                  <label for="subToneRange">Tono <span id="subToneValue">(300Hz)</span></label>
                   <input type="range" id="subToneRange" min="200" max="1500" value="300">
                 </div>
                 <div class="slider-row">
@@ -689,6 +759,12 @@
   const subSoundControls = document.getElementById('subSoundControls');
   const subToneRange = document.getElementById('subToneRange');
   const subVolumeRange = document.getElementById('subVolumeRange');
+  const toneValue = document.getElementById('toneValue');
+  const subToneValue = document.getElementById('subToneValue');
+  const fixedWordToggle = document.getElementById('fixedWordToggle');
+  const fixedWordControls = document.getElementById('fixedWordControls');
+  const fixedWordInput = document.getElementById('fixedWordInput');
+  const pinCurrentBtn = document.getElementById('pinCurrentBtn');
   const progressFill = document.getElementById('progressFill');
   const nextWordText = document.getElementById('nextWordText');
   const nextPreviewRow = document.getElementById('nextPreviewRow');
@@ -729,17 +805,30 @@
     return SUBDIVISION_INFO[subdivisionSelect.value] || { denom: 4, step: 1, tresillo: false };
   }
 
+  let audioTimeOrigin = null; // audioCtx.currentTime en el momento perfTimeOrigin
+  let perfTimeOrigin = null;  // performance.now() en ese mismo instante
+
   function ensureAudioCtx(){
     if(!audioCtx){
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      perfTimeOrigin = performance.now();
+      audioTimeOrigin = audioCtx.currentTime;
     }
     if(audioCtx.state === 'suspended') audioCtx.resume();
   }
 
-  function playClick(){
+  // Convierte un instante de performance.now() al reloj de audio, para poder
+  // programar el sonido en el momento EXACTO del pulso en vez de "ahora
+  // mismo" (que queda atado al jitter del poll de 20ms del scheduler).
+  function perfToAudioTime(perfMs){
+    if(audioTimeOrigin === null) return audioCtx.currentTime;
+    return audioTimeOrigin + (perfMs - perfTimeOrigin) / 1000;
+  }
+
+  function playClick(idealPerfTime){
     if(!soundToggle.checked) return;
     ensureAudioCtx();
-    const t = audioCtx.currentTime;
+    const t = Math.max(audioCtx.currentTime, perfToAudioTime(idealPerfTime));
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
@@ -754,10 +843,10 @@
 
   // Tick de subdivisión: más corto que el pulso principal para que se
   // distinga como un "tick" liviano debajo del click del compás.
-  function playSubClick(){
+  function playSubClick(idealPerfTime){
     if(!soundToggle.checked || !subSoundToggle.checked) return;
     ensureAudioCtx();
-    const t = audioCtx.currentTime;
+    const t = Math.max(audioCtx.currentTime, perfToAudioTime(idealPerfTime));
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
@@ -797,6 +886,20 @@
     return bucket[Math.floor(Math.random() * bucket.length)];
   }
 
+  function sanitizeFixedWord(raw){
+    return raw.toUpperCase().replace(/[^A-ZÑ]/g, '').slice(0, 10);
+  }
+
+  // Si "Palabra fija" está activo y hay algo cargado, siempre devuelve esa
+  // misma palabra (loop) ignorando fuente y cantidad de letras.
+  function resolveWord(n){
+    if(fixedWordToggle.checked){
+      const fw = sanitizeFixedWord(fixedWordInput.value);
+      if(fw.length > 0) return fw;
+    }
+    return pickWord(n);
+  }
+
   function setSource(newSource){
     wordSource = newSource;
     sourceRandom.classList.toggle('active', wordSource === 'random');
@@ -820,8 +923,10 @@
   sourceEs.addEventListener('click', () => setSource('es'));
   sourceEn.addEventListener('click', () => setSource('en'));
 
+  // Igual que en los dígitos: siempre se agrega un espacio final (fin de
+  // palabra) además de los espacios entre letras.
   function toMorse(w){
-    return w.split('').map(ch => MORSE[ch]).join(' / ');
+    return w.split('').map(ch => MORSE[ch]).join(' / ') + ' /';
   }
 
   // raya, punto y espacio entre letras son configurables por el usuario
@@ -883,7 +988,6 @@
   function beatPulse(){
     metronomeDot.classList.add('beat');
     setTimeout(() => metronomeDot.classList.remove('beat'), 100);
-    playClick();
   }
 
   // Reinicia el origen del reloj: se usa al activar el modo automático o
@@ -923,16 +1027,27 @@
 
   function schedulerTick(){
     const now = performance.now();
+
+    // Pulso principal: si el navegador pausó el timer (pestaña en segundo
+    // plano, etc.) saltamos directo al pulso que corresponde ahora en vez
+    // de disparar una ráfaga de clicks pegados recuperando los saltados.
     const nextBeatTime = originTime + beatCount * beatMs;
     if(now >= nextBeatTime){
+      const idealCount = Math.floor((now - originTime) / beatMs);
+      const idealTime = originTime + idealCount * beatMs;
       beatPulse();
-      beatCount++;
+      playClick(idealTime);
+      beatCount = idealCount + 1;
     }
+
     const nextSubTickTime = originTime + subTickCount * tickMs;
     if(now >= nextSubTickTime){
-      playSubClick();
-      subTickCount++;
+      const idealCount = Math.floor((now - originTime) / tickMs);
+      const idealTime = originTime + idealCount * tickMs;
+      playSubClick(idealTime);
+      subTickCount = idealCount + 1;
     }
+
     const nextWordTime = originTime + cumulativeTicks * tickMs;
     if(autoToggle.checked && now >= nextWordTime){
       generate();
@@ -990,12 +1105,12 @@
   // La "siguiente palabra" se precomputa para poder mostrarla de antemano;
   // al generar, se convierte en la actual y se calcula una nueva para el preview.
   function refreshNextPreview(){
-    nextWord = pickWord(parseInt(len.value,10));
+    nextWord = resolveWord(parseInt(len.value,10));
     nextWordText.textContent = nextWord;
   }
 
   function generate(){
-    const w = nextWord || pickWord(parseInt(len.value,10));
+    const w = nextWord || resolveWord(parseInt(len.value,10));
     hasGenerated = true;
 
     morseOut.textContent = toMorse(w);
@@ -1031,7 +1146,10 @@
   bpmRange.addEventListener('input', () => {
     bpmNumber.value = bpmRange.value;
     bpmValue.textContent = bpmRange.value;
-    if(autoToggle.checked) resetEpoch();
+    if(autoToggle.checked){
+      resetEpoch();
+      currentWordTotalTicks = 0;
+    }
   });
 
   bpmNumber.addEventListener('input', () => {
@@ -1040,7 +1158,10 @@
     v = Math.min(240, Math.max(30, v));
     bpmRange.value = v;
     bpmValue.textContent = v;
-    if(autoToggle.checked) resetEpoch();
+    if(autoToggle.checked){
+      resetEpoch();
+      currentWordTotalTicks = 0;
+    }
   });
 
   subdivisionSelect.addEventListener('change', () => {
@@ -1048,6 +1169,13 @@
       resetEpoch();
       currentWordTotalTicks = 0; // la palabra en curso queda cortada por el reinicio de reloj
     }
+  });
+
+  toneRange.addEventListener('input', () => {
+    toneValue.textContent = `(${toneRange.value}Hz)`;
+  });
+  subToneRange.addEventListener('input', () => {
+    subToneValue.textContent = `(${subToneRange.value}Hz)`;
   });
 
   soundToggle.addEventListener('change', () => {
@@ -1058,6 +1186,25 @@
   subSoundToggle.addEventListener('change', () => {
     subSoundControls.classList.toggle('disabled', !subSoundToggle.checked);
     if(subSoundToggle.checked) ensureAudioCtx();
+  });
+
+  fixedWordToggle.addEventListener('change', () => {
+    fixedWordControls.classList.toggle('disabled', !fixedWordToggle.checked);
+    refreshNextPreview();
+  });
+
+  fixedWordInput.addEventListener('input', () => {
+    const clean = sanitizeFixedWord(fixedWordInput.value);
+    if(clean !== fixedWordInput.value) fixedWordInput.value = clean;
+    if(fixedWordToggle.checked) refreshNextPreview();
+  });
+
+  pinCurrentBtn.addEventListener('click', () => {
+    if(!hasGenerated) return;
+    fixedWordInput.value = word.textContent;
+    fixedWordToggle.checked = true;
+    fixedWordControls.classList.remove('disabled');
+    refreshNextPreview();
   });
 
   if ('serviceWorker' in navigator) {
