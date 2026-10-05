@@ -546,6 +546,11 @@
     </div>
 
     <div class="mode-tabs">
+      <button class="mode-tab active" id="runManual" type="button">Manual</button>
+      <button class="mode-tab" id="runAuto" type="button">Automático</button>
+    </div>
+
+    <div class="mode-tabs">
       <button class="mode-tab active" id="sourceEs" type="button">Español</button>
       <button class="mode-tab" id="sourceEn" type="button">Inglés</button>
       <button class="mode-tab" id="sourceRandom" type="button">Aleatorio</button>
@@ -557,7 +562,7 @@
       <span class="count" id="countLabel">4</span>
     </div>
 
-    <div class="fixed-word-panel">
+    <div class="fixed-word-panel" id="fixedWordPanel" style="display:none">
       <div class="auto-row">
         <label class="switch">
           <input type="checkbox" id="fixedWordToggle">
@@ -568,7 +573,6 @@
       <div class="fixed-word-controls disabled" id="fixedWordControls">
         <input type="text" id="fixedWordInput" maxlength="10" placeholder="ESCRIBÍ UNA PALABRA (1-10 LETRAS)">
         <button type="button" id="pinCurrentBtn">Fijar palabra actual</button>
-        <p class="fixed-word-hint">Con esto activo, se ignoran la fuente y la cantidad de letras.</p>
       </div>
     </div>
 
@@ -587,8 +591,8 @@
       </div>
     </div>
 
-    <div class="auto-panel">
-      <div class="auto-row">
+    <div class="auto-panel" id="autoPanel" style="display:none">
+      <div class="auto-row" style="display:none">
         <label class="switch">
           <input type="checkbox" id="autoToggle">
           <span class="switch-track"></span>
@@ -761,6 +765,10 @@
   const subVolumeRange = document.getElementById('subVolumeRange');
   const toneValue = document.getElementById('toneValue');
   const subToneValue = document.getElementById('subToneValue');
+  const runManual = document.getElementById('runManual');
+  const runAuto = document.getElementById('runAuto');
+  const autoPanel = document.getElementById('autoPanel');
+  const fixedWordPanel = document.getElementById('fixedWordPanel');
   const fixedWordToggle = document.getElementById('fixedWordToggle');
   const fixedWordControls = document.getElementById('fixedWordControls');
   const fixedWordInput = document.getElementById('fixedWordInput');
@@ -893,7 +901,7 @@
   // Si "Palabra fija" está activo y hay algo cargado, siempre devuelve esa
   // misma palabra (loop) ignorando fuente y cantidad de letras.
   function resolveWord(n){
-    if(fixedWordToggle.checked){
+    if(autoToggle.checked && fixedWordToggle.checked){
       const fw = sanitizeFixedWord(fixedWordInput.value);
       if(fw.length > 0) return fw;
     }
@@ -952,6 +960,8 @@
     modeNormal.classList.toggle('active', mode === 'normal');
     modeInverso.classList.toggle('active', mode === 'inverso');
     subText.textContent = SUB_TEXT[mode];
+    updatePreviewVisibility();
+    renderNextPreview();
     if(!hasGenerated){
       word.textContent = mode === 'normal' ? 'tocá generar' : '? ? ?';
     } else {
@@ -1104,9 +1114,20 @@
 
   // La "siguiente palabra" se precomputa para poder mostrarla de antemano;
   // al generar, se convierte en la actual y se calcula una nueva para el preview.
+  // En Morse → Letra la siguiente palabra se muestra como morse.
+  function renderNextPreview(){
+    if(!nextWord) return;
+    nextWordText.textContent = mode === 'inverso' ? toMorse(nextWord) : nextWord;
+  }
+
+  // Visible en automático, y en Morse → Letra también en manual.
+  function updatePreviewVisibility(){
+    nextPreviewRow.classList.toggle('visible', autoToggle.checked || mode === 'inverso');
+  }
+
   function refreshNextPreview(){
     nextWord = resolveWord(parseInt(len.value,10));
-    nextWordText.textContent = nextWord;
+    renderNextPreview();
   }
 
   function generate(){
@@ -1133,7 +1154,12 @@
 
   autoToggle.addEventListener('change', () => {
     autoControls.classList.toggle('disabled', !autoToggle.checked);
-    nextPreviewRow.classList.toggle('visible', autoToggle.checked);
+    updatePreviewVisibility();
+    autoPanel.style.display = autoToggle.checked ? '' : 'none';
+    fixedWordPanel.style.display = autoToggle.checked ? '' : 'none';
+    runManual.classList.toggle('active', !autoToggle.checked);
+    runAuto.classList.toggle('active', autoToggle.checked);
+    refreshNextPreview(); // la palabra fija solo aplica en automático
     rhythmCounterRow.classList.toggle('visible', autoToggle.checked);
     if(autoToggle.checked){
       startScheduler();
@@ -1187,6 +1213,14 @@
     subSoundControls.classList.toggle('disabled', !subSoundToggle.checked);
     if(subSoundToggle.checked) ensureAudioCtx();
   });
+
+  function setRun(auto){
+    if(autoToggle.checked === auto) return;
+    autoToggle.checked = auto;
+    autoToggle.dispatchEvent(new Event('change'));
+  }
+  runManual.addEventListener('click', () => setRun(false));
+  runAuto.addEventListener('click', () => setRun(true));
 
   fixedWordToggle.addEventListener('change', () => {
     fixedWordControls.classList.toggle('disabled', !fixedWordToggle.checked);
