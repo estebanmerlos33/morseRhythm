@@ -904,7 +904,7 @@
     osc.stop(t + 0.05);
   }
 
-  // Sonido Morse: un click al comienzo de cada punto/raya, en la grilla.
+  // Sonido Morse: un click al comienzo de cada dígito (punto, raya y espacio), en la grilla.
   function playMorseClick(idealPerfTime){
     if(!soundToggle.checked || !morseSoundToggle.checked) return;
     ensureAudioCtx();
@@ -1159,7 +1159,7 @@
     cumulativeTicks = startTicks + totalTicks;
     currentWordStartTicks = startTicks;
     currentWordTotalTicks = totalTicks;
-    // Onsets de cada dígito de letra (punto/raya), mismo recorrido que toDigits().
+    // Onsets de cada dígito (punto/raya y espacio), mismo recorrido que toDigits().
     morseOnsets = [];
     morseOnsetIdx = 0;
     let offTicks = 0;
@@ -1168,6 +1168,7 @@
         morseOnsets.push(startTicks + offTicks);
         offTicks += sumDigits(sym === '-' ? valRaya.value : valPunto.value);
       }
+      morseOnsets.push(startTicks + offTicks); // dígito de espacio (entre letras / fin de palabra)
       offTicks += sumDigits(valEspacio.value);
     }
     lastTickInWord = 1;

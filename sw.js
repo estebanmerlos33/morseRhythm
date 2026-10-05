@@ -1,4 +1,4 @@
-const CACHE_NAME = 'morse-pwa-v2';
+const CACHE_NAME = 'morse-pwa-v3';
 const ASSETS = [
   './',
   './index.html',
