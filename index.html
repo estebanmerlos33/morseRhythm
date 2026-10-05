@@ -37,7 +37,7 @@
     align-items:center;
     justify-content:center;
     min-height:100%;
-    padding:24px;
+    padding:12px;
   }
   @media (prefers-color-scheme: light){
     :root:not([data-theme="dark"]){
@@ -51,7 +51,7 @@
     background:var(--ink-2);
     border:1px solid #2b4038;
     border-radius:6px;
-    padding:36px 32px 32px;
+    padding:22px 24px 22px;
     box-shadow:0 30px 60px -20px rgba(0,0,0,.6);
   }
 
@@ -65,14 +65,14 @@
   .sub{
     font-size:.85rem;
     color:var(--paper-dim);
-    margin:0 0 24px;
-    line-height:1.5;
+    margin:0 0 12px;
+    line-height:1.4;
   }
 
   .mode-tabs{
     display:flex;
     gap:8px;
-    margin-bottom:24px;
+    margin-bottom:8px;
     border-bottom:1px solid #2b4038;
     padding-bottom:0;
   }
@@ -86,7 +86,7 @@
     font-size:.72rem;
     letter-spacing:.04em;
     text-transform:uppercase;
-    padding:10px 4px;
+    padding:8px 4px;
     cursor:pointer;
     border-bottom:2px solid transparent;
     margin-bottom:-1px;
@@ -105,7 +105,7 @@
     display:flex;
     align-items:center;
     gap:14px;
-    margin-bottom:26px;
+    margin-bottom:12px;
   }
   .control label{
     font-size:.85rem;
@@ -129,18 +129,18 @@
   .code-params{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
-    gap:10px;
-    margin-bottom:26px;
+    gap:8px;
+    margin-bottom:12px;
   }
   .code-param{
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:6px;
+    gap:2px;
     background:rgba(0,0,0,.15);
     border:1px solid #2b4038;
     border-radius:4px;
-    padding:10px 6px;
+    padding:5px 6px;
   }
   .code-param label{
     font-size:.68rem;
@@ -168,17 +168,17 @@
     background:rgba(0,0,0,.15);
     border:1px solid #2b4038;
     border-radius:4px;
-    padding:14px 16px;
-    margin-bottom:26px;
+    padding:10px 14px;
+    margin-bottom:12px;
   }
+  .fixed-word-panel .auto-row{ margin-bottom:0; }
   .fixed-word-controls{
     display:grid;
-    gap:10px;
-    margin-top:12px;
+    gap:8px;
+    margin-top:10px;
   }
   .fixed-word-controls.disabled{
-    opacity:.4;
-    pointer-events:none;
+    display:none;
   }
   .fixed-word-controls input[type=text]{
     width:100%;
@@ -223,14 +223,14 @@
     background:rgba(0,0,0,.15);
     border:1px solid #2b4038;
     border-radius:4px;
-    padding:14px 16px;
-    margin-bottom:26px;
+    padding:12px 14px;
+    margin-bottom:12px;
   }
   .auto-row{
     display:flex;
     align-items:center;
     gap:10px;
-    margin-bottom:14px;
+    margin-bottom:10px;
   }
   .auto-row span{
     font-size:.8rem;
@@ -275,7 +275,7 @@
 
   .auto-controls{
     display:grid;
-    gap:12px;
+    gap:8px;
   }
   .auto-controls.disabled{
     opacity:.4;
@@ -283,8 +283,9 @@
   }
   .bpm-display{
     display:flex;
+    flex-wrap:wrap;
     align-items:center;
-    gap:10px;
+    gap:6px 10px;
   }
   .metronome-dot{
     width:14px; height:14px;
@@ -326,19 +327,21 @@
     padding:5px 2px;
   }
   #subdivisionSelect{
-    width:100%;
+    flex:1 1 130px;
+    min-width:0;
+    width:auto;
     background:var(--ink);
     color:var(--paper);
     border:1px solid #2b4038;
     border-radius:3px;
     font-family:'IBM Plex Mono',monospace;
-    font-size:.8rem;
-    padding:8px;
+    font-size:.78rem;
+    padding:6px 8px;
   }
   .sound-panel{
     border-top:1px solid #2b4038;
-    margin-top:4px;
-    padding-top:12px;
+    margin-top:2px;
+    padding-top:10px;
   }
   .sound-controls{
     display:grid;
@@ -365,7 +368,7 @@
     background:#2b4038;
     border-radius:2px;
     overflow:hidden;
-    margin:-14px 0 22px;
+    margin:-4px 0 10px;
   }
   .progress-fill{
     height:100%;
@@ -376,7 +379,7 @@
     display:none;
     align-items:baseline;
     gap:10px;
-    margin:-8px 0 22px;
+    margin:-2px 0 10px;
   }
   .rhythm-counter.visible{ display:flex; }
   .rhythm-counter .tag{
@@ -401,12 +404,12 @@
     background:var(--paper);
     color:var(--ink);
     border-radius:3px;
-    padding:26px 18px;
-    min-height:88px;
+    padding:12px 18px;
+    min-height:56px;
     display:flex;
     align-items:center;
     justify-content:center;
-    margin-bottom:22px;
+    margin-bottom:12px;
     position:relative;
     overflow-x:auto;
   }
@@ -444,7 +447,7 @@
     display:none;
     align-items:baseline;
     gap:10px;
-    margin:-10px 0 22px;
+    margin:-4px 0 10px;
   }
   .next-preview.visible{
     display:flex;
@@ -465,9 +468,9 @@
   }
 
   .readout{
-    margin-bottom:22px;
+    margin-bottom:12px;
     display:grid;
-    gap:10px;
+    gap:6px;
   }
   .readout-row{
     display:flex;
@@ -505,7 +508,7 @@
     display:flex;
     align-items:center;
     gap:10px;
-    margin:-4px 0 22px;
+    margin:-2px 0 12px;
   }
   .hide-toggle span{
     font-size:.8rem;
@@ -604,18 +607,18 @@
           <span class="metronome-dot" id="metronomeDot"></span>
           <span class="bpm-value" id="bpmValue">90</span>
           <span class="bpm-label">BPM</span>
+          <select id="subdivisionSelect" aria-label="Figura rítmica">
+            <option value="1">♩ Negra</option>
+            <option value="0.5">♪ Corchea</option>
+            <option value="0.25" selected>♬ Semicorchea</option>
+            <option value="0.3333333333">♪ ³ Tresillo</option>
+            <option value="0.1666666667">♬ ³ Tresillo</option>
+          </select>
         </div>
         <div class="bpm-edit">
           <input type="range" id="bpmRange" min="30" max="240" value="90">
           <input type="number" id="bpmNumber" min="30" max="240" value="90">
         </div>
-        <select id="subdivisionSelect">
-          <option value="1">Negra (♩)</option>
-          <option value="0.5">Corchea (♪)</option>
-          <option value="0.25" selected>Semicorchea</option>
-          <option value="0.3333333333">Tresillo de corcheas</option>
-          <option value="0.1666666667">Tresillo de semicorcheas</option>
-        </select>
 
         <div class="sound-panel">
           <div class="auto-row">
