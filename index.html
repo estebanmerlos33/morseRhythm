@@ -356,9 +356,9 @@
     margin-top:10px;
   }
   .sound-controls.disabled{
-    opacity:.4;
-    pointer-events:none;
+    display:none;
   }
+  .sound-panel:has(> .sound-controls.disabled) > .auto-row{ margin-bottom:0; }
   .slider-row{
     display:flex;
     align-items:center;
@@ -619,7 +619,7 @@
               <input type="checkbox" id="soundToggle">
               <span class="switch-track"></span>
             </label>
-            <span>Sonido del metrónomo</span>
+            <span>Metrónomo Principal</span>
           </div>
           <div class="sound-controls disabled" id="soundControls">
             <div class="slider-row">
@@ -637,7 +637,7 @@
                   <input type="checkbox" id="subSoundToggle">
                   <span class="switch-track"></span>
                 </label>
-                <span>Sonido de subdivisión</span>
+                <span>Subdivisión</span>
               </div>
               <div class="sound-controls disabled" id="subSoundControls">
                 <div class="slider-row">
@@ -647,6 +647,26 @@
                 <div class="slider-row">
                   <label for="subVolumeRange">Volumen</label>
                   <input type="range" id="subVolumeRange" min="0" max="100" value="35">
+                </div>
+              </div>
+            </div>
+
+            <div class="sound-panel">
+              <div class="auto-row">
+                <label class="switch">
+                  <input type="checkbox" id="morseSoundToggle">
+                  <span class="switch-track"></span>
+                </label>
+                <span>Morse</span>
+              </div>
+              <div class="sound-controls disabled" id="morseSoundControls">
+                <div class="slider-row">
+                  <label for="morseToneRange">Tono <span id="morseToneValue">(1000Hz)</span></label>
+                  <input type="range" id="morseToneRange" min="200" max="1500" value="1000">
+                </div>
+                <div class="slider-row">
+                  <label for="morseVolumeRange">Volumen</label>
+                  <input type="range" id="morseVolumeRange" min="0" max="100" value="60">
                 </div>
               </div>
             </div>
@@ -771,6 +791,11 @@
   const volumeRange = document.getElementById('volumeRange');
   const subSoundToggle = document.getElementById('subSoundToggle');
   const subSoundControls = document.getElementById('subSoundControls');
+  const morseSoundToggle = document.getElementById('morseSoundToggle');
+  const morseSoundControls = document.getElementById('morseSoundControls');
+  const morseToneRange = document.getElementById('morseToneRange');
+  const morseToneValue = document.getElementById('morseToneValue');
+  const morseVolumeRange = document.getElementById('morseVolumeRange');
   const subToneRange = document.getElementById('subToneRange');
   const subVolumeRange = document.getElementById('subVolumeRange');
   const toneValue = document.getElementById('toneValue');
@@ -807,6 +832,8 @@
   let currentWordTotalTicks = 0;
   let currentWordStartTicks = 0;
   let lastTickInWord = -1;
+  let morseOnsets = [];   // ticks absolutos (grilla) donde empieza cada punto/raya de la palabra actual
+  let morseOnsetIdx = 0;
   let audioCtx = null;
 
   // Denominador "real" (múltiplo de 2) y paso por tick para cada subdivisión.
@@ -875,6 +902,23 @@
     osc.connect(gain).connect(audioCtx.destination);
     osc.start(t);
     osc.stop(t + 0.05);
+  }
+
+  // Sonido Morse: un click al comienzo de cada punto/raya, en la grilla.
+  function playMorseClick(idealPerfTime){
+    if(!soundToggle.checked || !morseSoundToggle.checked) return;
+    ensureAudioCtx();
+    const t = Math.max(audioCtx.currentTime, perfToAudioTime(idealPerfTime));
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = parseFloat(morseToneRange.value);
+    const vol = parseFloat(morseVolumeRange.value) / 100;
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.07);
   }
 
   let mode = 'normal'; // 'normal' = letra→morse, 'inverso' = morse→letra
@@ -1019,6 +1063,8 @@
     beatCount = 0;
     subTickCount = 0;
     cumulativeTicks = 0;
+    morseOnsets = [];
+    morseOnsetIdx = 0;
   }
 
   function startScheduler(){
@@ -1033,6 +1079,8 @@
     stopProgress();
     currentWordTotalTicks = 0;
     lastTickInWord = -1;
+    morseOnsets = [];
+    morseOnsetIdx = 0;
     rhythmCounterText.textContent = '—';
   }
 
@@ -1072,6 +1120,15 @@
     if(autoToggle.checked && now >= nextWordTime){
       generate();
     }
+    // Morse: dispara cada onset al llegar su tick de la grilla (después de
+    // generate() para que el onset del tick 0 de la palabra suene de inmediato).
+    // Los onsets muy atrasados (timer pausado) se descartan en vez de ráfaga.
+    while(morseOnsetIdx < morseOnsets.length){
+      const onsetTime = originTime + morseOnsets[morseOnsetIdx] * tickMs;
+      if(onsetTime > now) break;
+      if(now - onsetTime < 120) playMorseClick(onsetTime);
+      morseOnsetIdx++;
+    }
     // Posición actual dentro de la palabra (1..total), sincronizada al reloj único
     if(autoToggle.checked && currentWordTotalTicks > 0){
       const wordStart = originTime + currentWordStartTicks * tickMs;
@@ -1102,6 +1159,17 @@
     cumulativeTicks = startTicks + totalTicks;
     currentWordStartTicks = startTicks;
     currentWordTotalTicks = totalTicks;
+    // Onsets de cada dígito de letra (punto/raya), mismo recorrido que toDigits().
+    morseOnsets = [];
+    morseOnsetIdx = 0;
+    let offTicks = 0;
+    for(const ch of w){
+      for(const sym of MORSE[ch]){
+        morseOnsets.push(startTicks + offTicks);
+        offTicks += sumDigits(sym === '-' ? valRaya.value : valPunto.value);
+      }
+      offTicks += sumDigits(valEspacio.value);
+    }
     lastTickInWord = 1;
     updateRhythmCounter(1, totalTicks);
 
@@ -1217,6 +1285,14 @@
   soundToggle.addEventListener('change', () => {
     soundControls.classList.toggle('disabled', !soundToggle.checked);
     if(soundToggle.checked) ensureAudioCtx();
+  });
+
+  morseToneRange.addEventListener('input', () => {
+    morseToneValue.textContent = `(${morseToneRange.value}Hz)`;
+  });
+  morseSoundToggle.addEventListener('change', () => {
+    morseSoundControls.classList.toggle('disabled', !morseSoundToggle.checked);
+    if(morseSoundToggle.checked) ensureAudioCtx();
   });
 
   subSoundToggle.addEventListener('change', () => {
