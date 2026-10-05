@@ -76,6 +76,7 @@
     border-bottom:1px solid #2b4038;
     padding-bottom:0;
   }
+  .mode-tabs + .control{ padding-top:8px; }
   .mode-tab{
     flex:1;
     background:none;
@@ -165,11 +166,15 @@
   }
 
   .fixed-word-panel{
-    background:rgba(0,0,0,.15);
-    border:1px solid #2b4038;
+    border:1px solid transparent;
     border-radius:4px;
+    margin:-2px 0 12px;
+  }
+  .fixed-word-panel:has(#fixedWordToggle:checked){
+    background:rgba(0,0,0,.15);
+    border-color:#2b4038;
     padding:10px 14px;
-    margin-bottom:12px;
+    margin:-2px -15px 12px;
   }
   .fixed-word-panel .auto-row{ margin-bottom:0; }
   .fixed-word-controls{
@@ -197,6 +202,8 @@
     color:#5a6e66;
     letter-spacing:.02em;
     font-weight:500;
+    font-size:.75rem;
+    text-transform:none;
   }
   .fixed-word-controls button{
     width:100%;
@@ -565,20 +572,6 @@
       <span class="count" id="countLabel">4</span>
     </div>
 
-    <div class="fixed-word-panel" id="fixedWordPanel" style="display:none">
-      <div class="auto-row">
-        <label class="switch">
-          <input type="checkbox" id="fixedWordToggle">
-          <span class="switch-track"></span>
-        </label>
-        <span>Practicar palabra fija</span>
-      </div>
-      <div class="fixed-word-controls disabled" id="fixedWordControls">
-        <input type="text" id="fixedWordInput" maxlength="10" placeholder="ESCRIBÍ UNA PALABRA (1-10 LETRAS)">
-        <button type="button" id="pinCurrentBtn">Fijar palabra actual</button>
-      </div>
-    </div>
-
     <div class="code-params">
       <div class="code-param">
         <label for="valRaya">raya —</label>
@@ -630,8 +623,8 @@
           </div>
           <div class="sound-controls disabled" id="soundControls">
             <div class="slider-row">
-              <label for="toneRange">Tono <span id="toneValue">(600Hz)</span></label>
-              <input type="range" id="toneRange" min="200" max="1500" value="600">
+              <label for="toneRange">Tono <span id="toneValue">(800Hz)</span></label>
+              <input type="range" id="toneRange" min="200" max="1500" value="800">
             </div>
             <div class="slider-row">
               <label for="volumeRange">Volumen</label>
@@ -648,8 +641,8 @@
               </div>
               <div class="sound-controls disabled" id="subSoundControls">
                 <div class="slider-row">
-                  <label for="subToneRange">Tono <span id="subToneValue">(300Hz)</span></label>
-                  <input type="range" id="subToneRange" min="200" max="1500" value="300">
+                  <label for="subToneRange">Tono <span id="subToneValue">(600Hz)</span></label>
+                  <input type="range" id="subToneRange" min="200" max="1500" value="600">
                 </div>
                 <div class="slider-row">
                   <label for="subVolumeRange">Volumen</label>
@@ -698,6 +691,20 @@
       </label>
       <span>Mantener oculto</span>
     </p>
+
+    <div class="fixed-word-panel" id="fixedWordPanel" style="display:none">
+      <div class="auto-row">
+        <label class="switch">
+          <input type="checkbox" id="fixedWordToggle">
+          <span class="switch-track"></span>
+        </label>
+        <span>Practicar palabra fija</span>
+      </div>
+      <div class="fixed-word-controls disabled" id="fixedWordControls">
+        <input type="text" id="fixedWordInput" maxlength="10" placeholder="Escribí una palabra (1-10 letras)">
+        <button type="button" id="pinCurrentBtn">Fijar palabra actual</button>
+      </div>
+    </div>
 
     <button id="genBtn">Generar</button>
   </main>
