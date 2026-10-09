@@ -1,7 +1,9 @@
-const CACHE_NAME = 'morse-pwa-v3';
+const CACHE_NAME = 'morse-pwa-v4';
 const ASSETS = [
   './',
   './index.html',
+  './style.css',
+  './app.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
