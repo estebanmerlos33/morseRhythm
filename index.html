@@ -129,7 +129,7 @@
 
   .code-params{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
+    grid-template-columns:repeat(3, 1fr) 30px;
     gap:8px;
     margin-bottom:12px;
   }
@@ -158,7 +158,50 @@
     font-weight:600;
     font-size:1rem;
     text-align:center;
-    padding:5px 2px;
+    padding:5px 20px;
+    -moz-appearance:textfield;
+    appearance:textfield;
+  }
+  .code-param input[type=number]::-webkit-inner-spin-button,
+  .code-param input[type=number]::-webkit-outer-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .num-wrap{ position:relative; width:100%; }
+  .num-arrows{
+    position:absolute;
+    top:1px; right:1px; bottom:1px;
+    width:20px;
+    display:flex;
+    flex-direction:column;
+  }
+  .num-arrows .arrow-btn,
+  .code-all .arrow-btn{
+    flex:1;
+    width:100%;
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:rgba(201,144,63,.12);
+    color:var(--brass-bright);
+    font-size:.6rem;
+    line-height:1;
+    letter-spacing:0;
+    cursor:pointer;
+  }
+  .num-arrows .arrow-btn:first-child{ border-radius:0 2px 0 0; }
+  .num-arrows .arrow-btn:last-child{ border-radius:0 0 2px 0; }
+  .num-arrows .arrow-btn:hover,
+  .code-all .arrow-btn:hover{ background:rgba(201,144,63,.3); }
+  .code-all{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .code-all .arrow-btn{
+    background:rgba(0,0,0,.15);
+    border:1px solid #2b4038;
+    border-radius:4px;
   }
   .code-param input[type=number]:focus-visible{
     outline:2px solid var(--brass-bright);
@@ -575,15 +618,37 @@
     <div class="code-params">
       <div class="code-param">
         <label for="valRaya">raya —</label>
-        <input type="number" id="valRaya" value="4">
+        <div class="num-wrap">
+          <input type="number" id="valRaya" value="4">
+          <span class="num-arrows">
+            <button type="button" class="arrow-btn" data-step-target="valRaya" data-step="1" aria-label="Aumentar">▲</button>
+            <button type="button" class="arrow-btn" data-step-target="valRaya" data-step="-1" aria-label="Disminuir">▼</button>
+          </span>
+        </div>
       </div>
       <div class="code-param">
         <label for="valPunto">punto ·</label>
-        <input type="number" id="valPunto" value="3">
+        <div class="num-wrap">
+          <input type="number" id="valPunto" value="3">
+          <span class="num-arrows">
+            <button type="button" class="arrow-btn" data-step-target="valPunto" data-step="1" aria-label="Aumentar">▲</button>
+            <button type="button" class="arrow-btn" data-step-target="valPunto" data-step="-1" aria-label="Disminuir">▼</button>
+          </span>
+        </div>
       </div>
       <div class="code-param">
         <label for="valEspacio">espacio</label>
-        <input type="number" id="valEspacio" value="2">
+        <div class="num-wrap">
+          <input type="number" id="valEspacio" value="2">
+          <span class="num-arrows">
+            <button type="button" class="arrow-btn" data-step-target="valEspacio" data-step="1" aria-label="Aumentar">▲</button>
+            <button type="button" class="arrow-btn" data-step-target="valEspacio" data-step="-1" aria-label="Disminuir">▼</button>
+          </span>
+        </div>
+      </div>
+      <div class="code-all">
+        <button type="button" class="arrow-btn" data-step-all="1" aria-label="Aumentar todos" title="Aumentar todos">▲</button>
+        <button type="button" class="arrow-btn" data-step-all="-1" aria-label="Disminuir todos" title="Disminuir todos">▼</button>
       </div>
     </div>
 
@@ -628,7 +693,7 @@
             </div>
             <div class="slider-row">
               <label for="volumeRange">Volumen</label>
-              <input type="range" id="volumeRange" min="0" max="100" value="60">
+              <input type="range" id="volumeRange" min="0" max="100" value="30">
             </div>
 
             <div class="sound-panel">
@@ -646,7 +711,7 @@
                 </div>
                 <div class="slider-row">
                   <label for="subVolumeRange">Volumen</label>
-                  <input type="range" id="subVolumeRange" min="0" max="100" value="35">
+                  <input type="range" id="subVolumeRange" min="0" max="100" value="18">
                 </div>
               </div>
             </div>
@@ -1301,6 +1366,28 @@
     if(subSoundToggle.checked) ensureAudioCtx();
   });
 
+  // Flechas de codificación: valores de un dígito (1–9), porque toDigits/sumDigits cuentan dígito a dígito.
+  const CODE_INPUTS = [valRaya, valPunto, valEspacio];
+  function clampDigit(n){ return Math.min(9, Math.max(1, n)); }
+  function stepCodeInput(el, d){
+    const n = parseInt(el.value, 10);
+    el.value = clampDigit((isNaN(n) ? 1 : n) + d);
+  }
+  document.querySelectorAll('[data-step-target]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      stepCodeInput(document.getElementById(btn.dataset.stepTarget), parseInt(btn.dataset.step, 10));
+    });
+  });
+  document.querySelectorAll('[data-step-all]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = parseInt(btn.dataset.stepAll, 10);
+      // Si alguno llegaría al límite no se mueve ninguno, para conservar las diferencias entre valores.
+      const vals = CODE_INPUTS.map(el => { const n = parseInt(el.value, 10); return isNaN(n) ? 1 : n; });
+      if(vals.some(n => n + d < 1 || n + d > 9)) return;
+      CODE_INPUTS.forEach((el, i) => { el.value = vals[i] + d; });
+    });
+  });
+
   function setRun(auto){
     if(autoToggle.checked === auto) return;
     autoToggle.checked = auto;
@@ -1327,6 +1414,9 @@
     fixedWordControls.classList.remove('disabled');
     refreshNextPreview();
   });
+
+  // Estado inicial por defecto: Letra → Morse, Automático, Español.
+  setRun(true);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
