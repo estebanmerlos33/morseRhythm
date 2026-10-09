@@ -1,52 +1,93 @@
-# Generador de letras — Morse (PWA)
+# Morse Rhythm
 
-App instalable para practicar la traducción de letras a código morse y a patrón numérico configurable.
+**Practicá código Morse como si fuera ritmo.** Morse Rhythm convierte letras y palabras en código Morse, lo traduce a valores numéricos y lo transforma en un patrón rítmico que podés escuchar y seguir con un metrónomo.
 
-## Archivos
+PWA offline, sin frameworks ni dependencias: HTML, CSS y JavaScript vanilla, con Web Audio API.
 
-- `index.html` — la app
-- `manifest.json` — metadata de la PWA (nombre, íconos, colores)
-- `sw.js` — service worker (cache offline)
-- `icons/` — íconos 192x192 y 512x512
+![Captura de Morse Rhythm](docs/screenshot.png)
 
-## Requisito importante
+## Cómo funciona
 
-Los navegadores solo permiten instalar una PWA y registrar el service worker si se sirve por **HTTPS** (o `localhost` en desarrollo). Abrir el `index.html` directamente desde el disco (`file://`) no habilita la instalación.
-
-## Cómo desplegarla (elegí una opción)
-
-### Opción 1 — GitHub Pages (gratis)
-1. Subí esta carpeta a un repositorio de GitHub.
-2. Andá a **Settings → Pages**.
-3. En "Source" elegí la rama `main` y la carpeta raíz.
-4. Guardá. En unos minutos tu PWA va a estar en `https://tu-usuario.github.io/tu-repo/`.
-
-### Opción 2 — Netlify (gratis, drag & drop)
-1. Entrá a [app.netlify.com/drop](https://app.netlify.com/drop).
-2. Arrastrá esta carpeta completa.
-3. Netlify te da una URL HTTPS al instante.
-
-### Opción 3 — Vercel
-```
-npm i -g vercel
-cd pwa
-vercel
+```text
+palabra → código Morse → valores numéricos → suma de valores → duración / patrón rítmico
 ```
 
-### Opción 4 — Probarla localmente antes de subirla
-Con Python instalado, desde dentro de la carpeta `pwa`:
-```
+Cada símbolo tiene un valor configurable, que equivale a una cantidad de subdivisiones (ticks):
+
+| Símbolo | Valor por defecto |
+| ------- | :---------------: |
+| raya `—`   | 4 |
+| punto `·`  | 3 |
+| espacio    | 2 |
+
+Ejemplo: la letra **A** (`·—`) se convierte en `3 4` más un espacio `2`, es decir `342`, que dura **9 ticks**. La suma de los dígitos de una palabra define cuánto dura dentro de la grilla rítmica.
+
+## Características
+
+- **Dos modos de práctica**
+  - *Letra → Morse*: ves la palabra y adivinás su Morse y sus dígitos.
+  - *Morse → Letra*: ves el Morse y adivinás la palabra.
+- **Manual o Automático**
+  - *Manual*: generás cada palabra con el botón **Generar**.
+  - *Automático*: las palabras se encadenan solas al ritmo del BPM elegido, y ves la siguiente palabra antes de que llegue.
+- **Fuente de palabras**: español, inglés o aleatorio, de 3 a 10 letras.
+- **Palabra fija** (modo Automático): practicá una palabra concreta o fijá la actual con un toque.
+- **Codificación editable**: cambiá los valores de raya, punto y espacio (1–9) con las flechas de cada campo, o subí y bajá los tres a la vez con las flechas globales.
+- **Ritmo**: de 30 a 240 BPM, con figuras rítmicas negra, corchea, semicorchea y tresillos, y un contador de compás que señala los tresillos.
+- **Tres metrónomos independientes**, cada uno con tono y volumen propios:
+
+  | Metrónomo | Qué marca |
+  | --------- | --------- |
+  | Principal | El pulso (800 Hz por defecto) |
+  | Subdivisión | Cada subdivisión de la figura rítmica (600 Hz por defecto) |
+  | Morse | El inicio de cada dígito de la palabra: puntos, rayas y espacios (1000 Hz por defecto) |
+
+- **Mantener oculto**: escondé el Morse y los dígitos para practicar de memoria y revelalos cuando quieras.
+- **Barra de progreso** sincronizada con la duración real de cada palabra.
+- **Funciona sin conexión** y se puede instalar como app.
+
+## Uso rápido
+
+1. Elegí el modo (*Letra → Morse* o *Morse → Letra*) y si querés generar de forma *Manual* o *Automático*.
+2. Elegí el idioma y la cantidad de letras.
+3. En Automático, ajustá el BPM y la figura rítmica, y activá los metrónomos que quieras escuchar.
+4. Seguí el patrón: cada dígito marca cuántos ticks dura un símbolo.
+
+El audio se activa solo después de una acción tuya (por ejemplo, encender un metrónomo), como exigen los navegadores.
+
+## Instalación como app (PWA)
+
+Abrí la página en tu navegador y elegí **Instalar app** o **Agregar a pantalla de inicio**. Una vez cargada, funciona sin conexión.
+
+## Ejecutar en local
+
+No hace falta compilar nada. Para que el Service Worker funcione, servilo con cualquier servidor estático:
+
+```bash
 python3 -m http.server 8000
 ```
-Después abrí `http://localhost:8000` en el navegador.
 
-## Instalar la app
-Una vez servida por HTTPS, abrí la URL desde el celu o la compu:
-- **Android/Chrome**: menú → "Instalar app" o "Agregar a pantalla de inicio".
-- **iOS/Safari**: botón compartir → "Agregar a pantalla de inicio".
-- **Desktop/Chrome**: ícono de instalación en la barra de direcciones.
+y abrí `http://localhost:8000`.
 
-## Personalizar
-- Cambiá los colores en las variables `:root` de `index.html` (`--ink`, `--brass`, etc.).
-- Reemplazá los íconos en `icons/` por los tuyos (mismo tamaño: 192x192 y 512x512).
-- Los valores por defecto de raya/punto/espacio (4/3/2) se editan en los inputs de la propia app.
+## Estructura del proyecto
+
+```text
+index.html      Interfaz
+style.css       Estilos
+app.js          Lógica: Morse, generación de palabras, scheduler rítmico y audio
+manifest.json   Configuración de la PWA
+sw.js           Service Worker: caché y modo offline
+icons/          Íconos de la PWA
+docs/           Recursos del README
+```
+
+## Tecnologías
+
+- HTML, CSS y JavaScript vanilla
+- Web Audio API
+- PWA: Web App Manifest y Service Worker
+
+## Notas técnicas
+
+- El scheduler comprueba el tiempo cada ~20 ms, pero todos los eventos (pulsos, subdivisiones y dígitos Morse) se calculan contra `performance.now()` y un origen común, por lo que los tres metrónomos quedan alineados en la misma grilla.
+- Los valores de raya, punto y espacio son de un dígito (1–9), porque la duración se calcula sumando dígito a dígito.

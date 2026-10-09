@@ -1,6 +1,6 @@
 {
-  "name": "Generador de letras — Morse",
-  "short_name": "Morse",
+  "name": "Morse Rhythm",
+  "short_name": "Morse Rhythm",
   "description": "Genera combinaciones aleatorias de letras y practica su traducción a código morse y a patrón numérico.",
   "start_url": "./index.html",
   "scope": "./",
