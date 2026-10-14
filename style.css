@@ -572,3 +572,49 @@
   @media (prefers-reduced-motion: reduce){
     button{ transition:none; }
   }
+
+  /* Switch de idioma (arriba a la derecha) */
+  .card{ position:relative; }
+  .lang-switch{
+    position:absolute;
+    top:8px; right:10px;
+    padding:4px;
+    cursor:pointer;
+    z-index:2;
+  }
+  .lang-switch input{ position:absolute; opacity:0; width:0; height:0; }
+  .lang-track{
+    position:relative;
+    display:flex;
+    width:54px; height:22px;
+    background:#2b4038;
+    border-radius:22px;
+    overflow:hidden;
+  }
+  .lang-opt{
+    position:relative;
+    z-index:1;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:.6rem;
+    letter-spacing:.04em;
+    color:var(--paper-dim);
+    transition:color .2s;
+  }
+  .lang-opt:first-child{ color:var(--ink); }
+  .lang-thumb{
+    position:absolute;
+    top:2px; bottom:2px; left:2px;
+    width:calc(50% - 2px);
+    background:var(--brass);
+    border-radius:20px;
+    transition:transform .2s;
+  }
+  .lang-switch input:checked ~ .lang-track .lang-thumb{ transform:translateX(100%); }
+  .lang-switch input:checked ~ .lang-track .lang-opt:first-child{ color:var(--paper-dim); }
+  .lang-switch input:checked ~ .lang-track .lang-opt:last-child{ color:var(--ink); }
+  .lang-switch input:focus-visible ~ .lang-track{ outline:2px solid var(--brass-bright); outline-offset:2px; }

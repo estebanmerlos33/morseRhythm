@@ -18,65 +18,73 @@
 </head>
 <body>
   <main class="card">
+    <label class="lang-switch" title="Español / English">
+      <input type="checkbox" id="langToggle" aria-label="Idioma / Language">
+      <span class="lang-track">
+        <span class="lang-opt">ES</span>
+        <span class="lang-opt">EN</span>
+        <span class="lang-thumb"></span>
+      </span>
+    </label>
     <h1>Morse Rhythm</h1>
     <p class="sub" id="subText">Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.</p>
 
     <div class="mode-tabs">
-      <button class="mode-tab active" id="modeNormal" type="button">Letra → Morse</button>
-      <button class="mode-tab" id="modeInverso" type="button">Morse → Letra</button>
+      <button class="mode-tab active" id="modeNormal" type="button" data-i18n="modeNormal">Letra → Morse</button>
+      <button class="mode-tab" id="modeInverso" type="button" data-i18n="modeInverso">Morse → Letra</button>
     </div>
 
     <div class="mode-tabs">
-      <button class="mode-tab active" id="runManual" type="button">Manual</button>
-      <button class="mode-tab" id="runAuto" type="button">Automático</button>
+      <button class="mode-tab active" id="runManual" type="button" data-i18n="runManual">Manual</button>
+      <button class="mode-tab" id="runAuto" type="button" data-i18n="runAuto">Automático</button>
     </div>
 
     <div class="mode-tabs">
-      <button class="mode-tab active" id="sourceEs" type="button">Español</button>
-      <button class="mode-tab" id="sourceEn" type="button">Inglés</button>
-      <button class="mode-tab" id="sourceRandom" type="button">Aleatorio</button>
+      <button class="mode-tab active" id="sourceEs" type="button" data-i18n="sourceEs">Español</button>
+      <button class="mode-tab" id="sourceEn" type="button" data-i18n="sourceEn">Inglés</button>
+      <button class="mode-tab" id="sourceRandom" type="button" data-i18n="sourceRandom">Aleatorio</button>
     </div>
 
     <div class="control">
-      <label for="len">Letras</label>
+      <label for="len" data-i18n="letters">Letras</label>
       <input type="range" id="len" min="3" max="10" value="4">
       <span class="count" id="countLabel">4</span>
     </div>
 
     <div class="code-params">
       <div class="code-param">
-        <label for="valRaya">raya —</label>
+        <label for="valRaya" data-i18n="dash">raya —</label>
         <div class="num-wrap">
           <input type="number" id="valRaya" value="4">
           <span class="num-arrows">
-            <button type="button" class="arrow-btn" data-step-target="valRaya" data-step="1" aria-label="Aumentar">▲</button>
-            <button type="button" class="arrow-btn" data-step-target="valRaya" data-step="-1" aria-label="Disminuir">▼</button>
+            <button type="button" class="arrow-btn" data-step-target="valRaya" data-step="1" aria-label="Aumentar" data-i18n-aria="inc">▲</button>
+            <button type="button" class="arrow-btn" data-step-target="valRaya" data-step="-1" aria-label="Disminuir" data-i18n-aria="dec">▼</button>
           </span>
         </div>
       </div>
       <div class="code-param">
-        <label for="valPunto">punto ·</label>
+        <label for="valPunto" data-i18n="dot">punto ·</label>
         <div class="num-wrap">
           <input type="number" id="valPunto" value="3">
           <span class="num-arrows">
-            <button type="button" class="arrow-btn" data-step-target="valPunto" data-step="1" aria-label="Aumentar">▲</button>
-            <button type="button" class="arrow-btn" data-step-target="valPunto" data-step="-1" aria-label="Disminuir">▼</button>
+            <button type="button" class="arrow-btn" data-step-target="valPunto" data-step="1" aria-label="Aumentar" data-i18n-aria="inc">▲</button>
+            <button type="button" class="arrow-btn" data-step-target="valPunto" data-step="-1" aria-label="Disminuir" data-i18n-aria="dec">▼</button>
           </span>
         </div>
       </div>
       <div class="code-param">
-        <label for="valEspacio">espacio</label>
+        <label for="valEspacio" data-i18n="space">espacio</label>
         <div class="num-wrap">
           <input type="number" id="valEspacio" value="2">
           <span class="num-arrows">
-            <button type="button" class="arrow-btn" data-step-target="valEspacio" data-step="1" aria-label="Aumentar">▲</button>
-            <button type="button" class="arrow-btn" data-step-target="valEspacio" data-step="-1" aria-label="Disminuir">▼</button>
+            <button type="button" class="arrow-btn" data-step-target="valEspacio" data-step="1" aria-label="Aumentar" data-i18n-aria="inc">▲</button>
+            <button type="button" class="arrow-btn" data-step-target="valEspacio" data-step="-1" aria-label="Disminuir" data-i18n-aria="dec">▼</button>
           </span>
         </div>
       </div>
       <div class="code-all">
-        <button type="button" class="arrow-btn" data-step-all="1" aria-label="Aumentar todos" title="Aumentar todos">▲</button>
-        <button type="button" class="arrow-btn" data-step-all="-1" aria-label="Disminuir todos" title="Disminuir todos">▼</button>
+        <button type="button" class="arrow-btn" data-step-all="1" aria-label="Aumentar todos" title="Aumentar todos" data-i18n-aria="incAll" data-i18n-title="incAll">▲</button>
+        <button type="button" class="arrow-btn" data-step-all="-1" aria-label="Disminuir todos" title="Disminuir todos" data-i18n-aria="decAll" data-i18n-title="decAll">▼</button>
       </div>
     </div>
 
@@ -86,19 +94,19 @@
           <input type="checkbox" id="autoToggle">
           <span class="switch-track"></span>
         </label>
-        <span>Generación automática</span>
+        <span data-i18n="autoGen">Generación automática</span>
       </div>
       <div class="auto-controls disabled" id="autoControls">
         <div class="bpm-display">
           <span class="metronome-dot" id="metronomeDot"></span>
           <span class="bpm-value" id="bpmValue">90</span>
           <span class="bpm-label">BPM</span>
-          <select id="subdivisionSelect" aria-label="Figura rítmica">
-            <option value="1">♩ Negra</option>
-            <option value="0.5">♪ Corchea</option>
-            <option value="0.25" selected>♬ Semicorchea</option>
-            <option value="0.3333333333">♪ ³ Tresillo</option>
-            <option value="0.1666666667">♬ ³ Tresillo</option>
+          <select id="subdivisionSelect" aria-label="Figura rítmica" data-i18n-aria="figure">
+            <option value="1" data-i18n="sub1">♩ Negra</option>
+            <option value="0.5" data-i18n="sub05">♪ Corchea</option>
+            <option value="0.25" selected data-i18n="sub025">♬ Semicorchea</option>
+            <option value="0.3333333333" data-i18n="sub033">♪ ³ Tresillo</option>
+            <option value="0.1666666667" data-i18n="sub016">♬ ³ Tresillo</option>
           </select>
         </div>
         <div class="bpm-edit">
@@ -112,15 +120,15 @@
               <input type="checkbox" id="soundToggle">
               <span class="switch-track"></span>
             </label>
-            <span>Metrónomo Principal</span>
+            <span data-i18n="mainMetro">Metrónomo Principal</span>
           </div>
           <div class="sound-controls disabled" id="soundControls">
             <div class="slider-row">
-              <label for="toneRange">Tono <span id="toneValue">(800Hz)</span></label>
+              <label for="toneRange"><span data-i18n="tone">Tono</span> <span id="toneValue">(800Hz)</span></label>
               <input type="range" id="toneRange" min="200" max="1500" value="800">
             </div>
             <div class="slider-row">
-              <label for="volumeRange">Volumen</label>
+              <label for="volumeRange" data-i18n="volume">Volumen</label>
               <input type="range" id="volumeRange" min="0" max="100" value="30">
             </div>
 
@@ -130,15 +138,15 @@
                   <input type="checkbox" id="subSoundToggle">
                   <span class="switch-track"></span>
                 </label>
-                <span>Subdivisión</span>
+                <span data-i18n="subdivision">Subdivisión</span>
               </div>
               <div class="sound-controls disabled" id="subSoundControls">
                 <div class="slider-row">
-                  <label for="subToneRange">Tono <span id="subToneValue">(600Hz)</span></label>
+                  <label for="subToneRange"><span data-i18n="tone">Tono</span> <span id="subToneValue">(600Hz)</span></label>
                   <input type="range" id="subToneRange" min="200" max="1500" value="600">
                 </div>
                 <div class="slider-row">
-                  <label for="subVolumeRange">Volumen</label>
+                  <label for="subVolumeRange" data-i18n="volume">Volumen</label>
                   <input type="range" id="subVolumeRange" min="0" max="100" value="18">
                 </div>
               </div>
@@ -154,11 +162,11 @@
               </div>
               <div class="sound-controls disabled" id="morseSoundControls">
                 <div class="slider-row">
-                  <label for="morseToneRange">Tono <span id="morseToneValue">(1000Hz)</span></label>
+                  <label for="morseToneRange"><span data-i18n="tone">Tono</span> <span id="morseToneValue">(1000Hz)</span></label>
                   <input type="range" id="morseToneRange" min="200" max="1500" value="1000">
                 </div>
                 <div class="slider-row">
-                  <label for="morseVolumeRange">Volumen</label>
+                  <label for="morseVolumeRange" data-i18n="volume">Volumen</label>
                   <input type="range" id="morseVolumeRange" min="0" max="100" value="60">
                 </div>
               </div>
@@ -169,7 +177,7 @@
     </div>
 
     <p class="rhythm-counter" id="rhythmCounterRow">
-      <span class="tag">compás</span>
+      <span class="tag" data-i18n="bar">compás</span>
       <span class="value" id="rhythmCounterText">—</span>
     </p>
 
@@ -182,7 +190,7 @@
     </div>
 
     <p class="next-preview" id="nextPreviewRow">
-      <span class="tag">siguiente palabra</span>
+      <span class="tag" data-i18n="nextWord">siguiente palabra</span>
       <span class="value" id="nextWordText">····</span>
     </p>
 
@@ -192,7 +200,7 @@
         <span class="value empty" id="morseOut">—</span>
       </div>
       <div class="readout-row">
-        <span class="tag">dígitos</span>
+        <span class="tag" data-i18n="digits">dígitos</span>
         <span class="value empty" id="digitsOut">—</span>
       </div>
     </div>
@@ -202,7 +210,7 @@
         <input type="checkbox" id="hideToggle" checked>
         <span class="switch-track"></span>
       </label>
-      <span>Mantener oculto</span>
+      <span data-i18n="keepHidden">Mantener oculto</span>
     </p>
 
     <div class="fixed-word-panel" id="fixedWordPanel" style="display:none">
@@ -211,15 +219,15 @@
           <input type="checkbox" id="fixedWordToggle">
           <span class="switch-track"></span>
         </label>
-        <span>Practicar palabra fija</span>
+        <span data-i18n="fixedWord">Practicar palabra fija</span>
       </div>
       <div class="fixed-word-controls disabled" id="fixedWordControls">
-        <input type="text" id="fixedWordInput" maxlength="10" placeholder="Escribí una palabra (1-10 letras)">
-        <button type="button" id="pinCurrentBtn">Fijar palabra actual</button>
+        <input type="text" id="fixedWordInput" maxlength="10" placeholder="Escribí una palabra (1-10 letras)" data-i18n-placeholder="fixedPlaceholder">
+        <button type="button" id="pinCurrentBtn" data-i18n="pinCurrent">Fijar palabra actual</button>
       </div>
     </div>
 
-    <button id="genBtn">Generar</button>
+    <button id="genBtn" data-i18n="generate">Generar</button>
   </main>
 
 <script src="app.js"></script>

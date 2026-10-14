@@ -276,20 +276,57 @@ const MORSE = {
     return letras + espacio;
   }
 
-  const SUB_TEXT = {
-    normal: 'Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.',
-    inverso: 'Vas a ver el morse y los dígitos primero. Adiviná la letra antes de revelarla.'
+  // Textos de la interfaz (español por defecto). Solo afecta a la UI, no a las palabras generadas.
+  const I18N = {
+    es: {
+      'sub.normal': 'Elegí cuántas letras querés y generá una combinación al azar para practicar su patrón morse.',
+      'sub.inverso': 'Vas a ver el morse y los dígitos primero. Adiviná la letra antes de revelarla.',
+      modeNormal: 'Letra → Morse', modeInverso: 'Morse → Letra',
+      runManual: 'Manual', runAuto: 'Automático',
+      sourceEs: 'Español', sourceEn: 'Inglés', sourceRandom: 'Aleatorio',
+      letters: 'Letras', dash: 'raya —', dot: 'punto ·', space: 'espacio',
+      inc: 'Aumentar', dec: 'Disminuir', incAll: 'Aumentar todos', decAll: 'Disminuir todos',
+      autoGen: 'Generación automática', figure: 'Figura rítmica',
+      sub1: '♩ Negra', sub05: '♪ Corchea', sub025: '♬ Semicorchea', sub033: '♪ ³ Tresillo', sub016: '♬ ³ Tresillo',
+      mainMetro: 'Metrónomo Principal', subdivision: 'Subdivisión',
+      tone: 'Tono', volume: 'Volumen',
+      bar: 'compás', nextWord: 'siguiente palabra', digits: 'dígitos',
+      keepHidden: 'Mantener oculto', fixedWord: 'Practicar palabra fija',
+      fixedPlaceholder: 'Escribí una palabra (1-10 letras)',
+      pinCurrent: 'Fijar palabra actual', generate: 'Generar',
+      tapGenerate: 'tocá generar', triplet: 'Tresillo'
+    },
+    en: {
+      'sub.normal': 'Choose how many letters you want and generate a random combination to practice its Morse pattern.',
+      'sub.inverso': "You'll see the Morse and digits first. Guess the letter before revealing it.",
+      modeNormal: 'Letter → Morse', modeInverso: 'Morse → Letter',
+      runManual: 'Manual', runAuto: 'Automatic',
+      sourceEs: 'Spanish', sourceEn: 'English', sourceRandom: 'Random',
+      letters: 'Letters', dash: 'dash —', dot: 'dot ·', space: 'space',
+      inc: 'Increase', dec: 'Decrease', incAll: 'Increase all', decAll: 'Decrease all',
+      autoGen: 'Automatic generation', figure: 'Rhythmic figure',
+      sub1: '♩ Quarter', sub05: '♪ Eighth', sub025: '♬ Sixteenth', sub033: '♪ ³ Triplet', sub016: '♬ ³ Triplet',
+      mainMetro: 'Main Metronome', subdivision: 'Subdivision',
+      tone: 'Tone', volume: 'Volume',
+      bar: 'bar', nextWord: 'next word', digits: 'digits',
+      keepHidden: 'Keep hidden', fixedWord: 'Practice fixed word',
+      fixedPlaceholder: 'Type a word (1-10 letters)',
+      pinCurrent: 'Pin current word', generate: 'Generate',
+      tapGenerate: 'tap generate', triplet: 'Triplet'
+    }
   };
+  let lang = 'es';
+  function t(key){ return I18N[lang][key]; }
 
   function setMode(newMode){
     mode = newMode;
     modeNormal.classList.toggle('active', mode === 'normal');
     modeInverso.classList.toggle('active', mode === 'inverso');
-    subText.textContent = SUB_TEXT[mode];
+    subText.textContent = t('sub.' + mode);
     updatePreviewVisibility();
     renderNextPreview();
     if(!hasGenerated){
-      word.textContent = mode === 'normal' ? 'tocá generar' : '? ? ?';
+      word.textContent = mode === 'normal' ? t('tapGenerate') : '? ? ?';
     } else {
       applyVisibility();
     }
@@ -365,7 +402,7 @@ const MORSE = {
     const info = getSubdivisionInfo();
     const cur = tickInWord * info.step;
     const tot = totalTicks * info.step;
-    const label = info.tresillo ? ' - Tresillo' : '';
+    const label = info.tresillo ? ' - ' + t('triplet') : '';
     rhythmCounterText.textContent = `${cur}/${info.denom} : ${tot}/${info.denom}${label}`;
   }
 
@@ -678,6 +715,24 @@ const MORSE = {
     fixedWordToggle.checked = true;
     fixedWordControls.classList.remove('disabled');
     refreshNextPreview();
+  });
+
+  // Idioma de la interfaz: solo textos de las herramientas; las palabras generadas no cambian.
+  function applyLang(){
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+    document.querySelectorAll('[data-i18n-title]').forEach(el => el.setAttribute('title', t(el.dataset.i18nTitle)));
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)));
+    subText.textContent = t('sub.' + mode);
+    if(!hasGenerated) word.textContent = mode === 'normal' ? t('tapGenerate') : '? ? ?';
+    if(autoToggle.checked && currentWordTotalTicks > 0 && lastTickInWord > 0){
+      updateRhythmCounter(lastTickInWord, currentWordTotalTicks);
+    }
+  }
+  document.getElementById('langToggle').addEventListener('change', (e) => {
+    lang = e.target.checked ? 'en' : 'es';
+    applyLang();
   });
 
   // Estado inicial por defecto: Letra → Morse, Automático, Español.
