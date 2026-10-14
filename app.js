@@ -102,6 +102,10 @@ const MORSE = {
   let lastTickInWord = -1;
   let morseOnsets = [];   // ticks absolutos (grilla) donde empieza cada punto/raya de la palabra actual
   let morseOnsetIdx = 0;
+  let morseSegs = [];     // {s,e}: ticks absolutos de cada dígito de la palabra actual (igual orden que los spans)
+  let segMorseEls = [];   // spans de morseOut, uno por dígito (punto/raya/"/")
+  let segDigitEls = [];   // spans de digitsOut, uno por dígito
+  let activeSeg = -1;
   let audioCtx = null;
 
   // Denominador "real" (múltiplo de 2) y paso por tick para cada subdivisión.
@@ -333,6 +337,8 @@ const MORSE = {
     cumulativeTicks = 0;
     morseOnsets = [];
     morseOnsetIdx = 0;
+    morseSegs = [];
+    setHighlight(-1);
   }
 
   function startScheduler(){
@@ -349,6 +355,8 @@ const MORSE = {
     lastTickInWord = -1;
     morseOnsets = [];
     morseOnsetIdx = 0;
+    morseSegs = [];
+    setHighlight(-1);
     rhythmCounterText.textContent = '—';
   }
 
@@ -397,6 +405,15 @@ const MORSE = {
       if(now - onsetTime < 120) playMorseClick(onsetTime);
       morseOnsetIdx++;
     }
+    // Dígito iluminado: el que ocupa el tick actual de la grilla (mismo reloj que los clicks).
+    if(autoToggle.checked && morseSegs.length){
+      const tk = (now - originTime) / tickMs;
+      let idx = -1;
+      for(let i = 0; i < morseSegs.length; i++){
+        if(tk >= morseSegs[i].s && tk < morseSegs[i].e){ idx = i; break; }
+      }
+      setHighlight(idx);
+    }
     // Posición actual dentro de la palabra (1..total), sincronizada al reloj único
     if(autoToggle.checked && currentWordTotalTicks > 0){
       const wordStart = originTime + currentWordStartTicks * tickMs;
@@ -430,14 +447,19 @@ const MORSE = {
     // Onsets de cada dígito (punto/raya y espacio), mismo recorrido que toDigits().
     morseOnsets = [];
     morseOnsetIdx = 0;
+    morseSegs = [];
     let offTicks = 0;
     for(const ch of w){
       for(const sym of MORSE[ch]){
+        const d = sumDigits(sym === '-' ? valRaya.value : valPunto.value);
         morseOnsets.push(startTicks + offTicks);
-        offTicks += sumDigits(sym === '-' ? valRaya.value : valPunto.value);
+        morseSegs.push({ s: startTicks + offTicks, e: startTicks + offTicks + d });
+        offTicks += d;
       }
+      const dEsp = sumDigits(valEspacio.value);
       morseOnsets.push(startTicks + offTicks); // dígito de espacio (entre letras / fin de palabra)
-      offTicks += sumDigits(valEspacio.value);
+      morseSegs.push({ s: startTicks + offTicks, e: startTicks + offTicks + dEsp });
+      offTicks += dEsp;
     }
     lastTickInWord = 1;
     updateRhythmCounter(1, totalTicks);
@@ -477,14 +499,53 @@ const MORSE = {
     renderNextPreview();
   }
 
+  // Dibuja morse y dígitos como spans por dígito (el texto resultante es idéntico
+  // a toMorse()/toDigits()) para poder iluminar el dígito del pulso actual.
+  function renderReadouts(w){
+    morseOut.textContent = '';
+    digitsOut.textContent = '';
+    segMorseEls = [];
+    segDigitEls = [];
+    activeSeg = -1;
+    const mk = (parent, text) => {
+      const sp = document.createElement('span');
+      sp.className = 'seg';
+      sp.textContent = text;
+      parent.appendChild(sp);
+      return sp;
+    };
+    const letters = w.split('');
+    letters.forEach((ch, li) => {
+      for(const sym of MORSE[ch]){
+        segMorseEls.push(mk(morseOut, sym));
+        segDigitEls.push(mk(digitsOut, sym === '-' ? valRaya.value : valPunto.value));
+      }
+      morseOut.appendChild(document.createTextNode(' '));
+      segMorseEls.push(mk(morseOut, '/'));
+      if(li < letters.length - 1) morseOut.appendChild(document.createTextNode(' '));
+      segDigitEls.push(mk(digitsOut, valEspacio.value));
+    });
+  }
+
+  function setHighlight(idx){
+    if(idx === activeSeg) return;
+    if(activeSeg >= 0 && segMorseEls[activeSeg]){
+      segMorseEls[activeSeg].classList.remove('on');
+      segDigitEls[activeSeg].classList.remove('on');
+    }
+    activeSeg = idx;
+    if(idx >= 0 && segMorseEls[idx]){
+      segMorseEls[idx].classList.add('on');
+      segDigitEls[idx].classList.add('on');
+    }
+  }
+
   function generate(){
     const w = nextWord || resolveWord(parseInt(len.value,10));
     hasGenerated = true;
 
-    morseOut.textContent = toMorse(w);
+    renderReadouts(w);
     morseOut.classList.remove('empty');
-
-    digitsOut.textContent = toDigits(w);
     digitsOut.classList.remove('empty');
 
     word.classList.remove('placeholder');
@@ -508,6 +569,7 @@ const MORSE = {
     runAuto.classList.toggle('active', autoToggle.checked);
     refreshNextPreview(); // la palabra fija solo aplica en automático
     rhythmCounterRow.classList.toggle('visible', autoToggle.checked);
+    morseOut.closest('.readout').classList.toggle('auto-hl', autoToggle.checked);
     if(autoToggle.checked){
       startScheduler();
       generate();
